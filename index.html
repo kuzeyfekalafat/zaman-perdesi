@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zaman Perdesi | Küratörlü Müzik Platformu</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #0f172a; color: #f8fafc; font-family: sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #1e293b; padding: 20px; border-radius: 12px; }
+        input, button { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: none; box-sizing: border-box; }
+        input { background: #334155; color: white; }
+        button { background: #10b981; color: white; font-weight: bold; cursor: pointer; }
+        button:hover { background: #059669; }
+        .song-card { background: #334155; padding: 12px; margin-top: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Zaman Perdesi</h1>
+        <div id="auth-section">
+            <h3>Giriş Yap / Üye Ol</h3>
+            <input type="email" id="email" placeholder="E-posta adresiniz">
+            <input type="password" id="password" placeholder="Şifreniz">
+            <button onclick="signUp()">Kayıt Ol</button>
+            <button onclick="signIn()">Giriş Yap</button>
+        </div>
+        <div id="app-section" style="display:none;">
+            <h3 id="user-info"></h3>
+            <button onclick="signOut()" style="background:#ef4444;">Çıkış Yap</button>
+            <hr>
+            <h3>Şarkı Yükle (Küratör Onaylı)</h3>
+            <input type="text" id="song-title" placeholder="Şarkı Adı">
+            <input type="text" id="song-artist" placeholder="Sanatçı">
+            <input type="text" id="song-url" placeholder="Müzik Dosyası URL (.mp3)">
+            <button onclick="uploadSong()">Şarkıyı Gönder</button>
+            <hr>
+            <h3>Yayınlanan Şarkılar</h3>
+            <div id="songs-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'BURAYA_SUPABASE_URL_GELECEK';
+        const SUPABASE_ANON_KEY = 'BURAYA_SUPABASE_ANON_KEY_GELECEK';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function signUp() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { error } = await supabase.auth.signUp({ email, password });
+            if (error) alert(error.message);
+            else alert('Kayıt başarılı! E-postanızı kontrol edin veya giriş yapın.');
+        }
+
+        async function signIn() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) alert(error.message);
+            else checkUser();
+        }
+
+        async function signOut() {
+            await supabase.auth.signOut();
+            location.reload();
+        }
+
+        async function checkUser() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                document.getElementById('auth-section').style.display = 'none';
+                document.getElementById('app-section').style.display = 'block';
+                document.getElementById('user-info').innerText = 'Hoş geldin: ' + user.email;
+                loadSongs();
+            }
+        }
+
+        async function uploadSong() {
+            const title = document.getElementById('song-title').value;
+            const artist = document.getElementById('song-artist').value;
+            const song_url = document.getElementById('song-url').value;
+            const { data: { user } } = await supabase.auth.getUser();
+
+            const { error } = await supabase.from('songs').insert([{ title, artist, song_url, user_id: user.id, is_approved: false }]);
+            if (error) alert(error.message);
+            else { alert('Şarkı küratör onayına gönderildi!'); loadSongs(); }
+        }
+
+        async function loadSongs() {
+            const { data: songs } = await supabase.from('songs').select('*').eq('is_approved', true);
+            const listDiv = document.getElementById('songs-list');
+            listDiv.innerHTML = '';
+            if(songs) {
+                songs.forEach(song => {
+                    listDiv.innerHTML += `<div class="song-card"><div><strong>${song.title}</strong> - ${song.artist}</div><audio controls src="${song.song_url}"></audio></div>`;
+                });
+            }
+        }
+        checkUser();
+    </script>
+</body>
+</html>
