@@ -47,6 +47,8 @@
             <label style="font-size: 13px; color: #94a3b8; display: block; margin-top: 5px;">MP3 / Ses Dosyası Seç (Cihazdan):</label>
             <input type="file" id="song-file" accept="audio/*">
 
+            <input type="text" id="song-url-input" placeholder="Veya Ses Dosyası İnternet Linki (URL)">
+
             <label style="font-size: 13px; color: #94a3b8; display: block; margin-top: 5px;">Kapak Görseli Seç (Cihazdan):</label>
             <input type="file" id="cover-file" accept="image/*">
 
@@ -101,30 +103,41 @@
             const album = document.getElementById('song-album').value;
             const lyrics = document.getElementById('song-lyrics').value;
             const fileInput = document.getElementById('song-file');
+            const urlInput = document.getElementById('song-url-input').value.trim();
             const uploadBtn = document.getElementById('upload-btn');
 
-            if (!title || fileInput.files.length === 0) {
-                alert('Lütfen şarkı adını girin ve bir ses dosyası seçin!');
+            if (!title || (fileInput.files.length === 0 && !urlInput)) {
+                alert('Lütfen şarkı adını girin ve bir ses dosyası seçin veya link ekleyin!');
                 return;
             }
 
-            const file = fileInput.files[0];
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-
-            uploadBtn.innerText = 'Yükleniyor, lütfen bekleyin...';
+            uploadBtn.innerText = 'İşleniyor, lütfen bekleyin...';
             uploadBtn.disabled = true;
 
             try {
-                const { data: storageData, error: storageError } = await supabase.storage
-                    .from('sarkilar')
-                    .upload(fileName, file);
+                let publicUrl = urlInput;
 
-                if (storageError) throw storageError;
+                // Eğer dosyayı cihazdan seçtiyse storage'a yüklemeyi dene
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const cleanFileName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
+                    const fileName = `${Date.now()}_${cleanFileName}`;
 
-                const { data: { publicUrl } } = supabase.storage
-                    .from('sarkilar')
-                    .getPublicUrl(fileName);
+                    const { data: storageData, error: storageError } = await supabase.storage
+                        .from('sarkilar')
+                        .upload(fileName, file, {
+                            cacheControl: '3600',
+                            upsert: false
+                        });
+
+                    if (storageError) throw storageError;
+
+                    const { data: urlData } = supabase.storage
+                        .from('sarkilar')
+                        .getPublicUrl(fileName);
+                        
+                    publicUrl = urlData.publicUrl;
+                }
 
                 const { data: { user } } = await supabase.auth.getUser();
 
@@ -138,14 +151,15 @@
 
                 if (dbError) throw dbError;
 
-                alert('Şarkı başarıyla yüklendi ve küratör onayına gönderildi!');
+                alert('Şarkı başarıyla eklendi ve küratör onayına gönderildi!');
                 document.getElementById('song-title').value = '';
                 document.getElementById('song-album').value = '';
                 document.getElementById('song-lyrics').value = '';
+                document.getElementById('song-url-input').value = '';
                 fileInput.value = '';
                 loadSongs();
             } catch (error) {
-                alert('Yükleme sırasında hata oluştu: ' + error.message);
+                alert('İşlem sırasında hata oluştu: ' + error.message);
             } finally {
                 uploadBtn.innerText = 'Şarkıyı Gönder';
                 uploadBtn.disabled = false;
@@ -169,6 +183,7 @@
                 listDiv.innerHTML = '<p style="font-size:13px; color:#94a3b8; text-align:center; margin-top:10px;">Henüz onaylanmış şarkı yok.</p>';
             }
         }
+        checkTest(); // safe check
         checkUser();
     </script>
 </body>
