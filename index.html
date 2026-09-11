@@ -8,8 +8,8 @@
     <style>
         body { background: #0f172a; color: #f8fafc; font-family: sans-serif; margin: 0; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: #1e293b; padding: 20px; border-radius: 12px; }
-        input, button { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: none; box-sizing: border-box; }
-        input { background: #334155; color: white; }
+        input, select, textarea, button { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: none; box-sizing: border-box; }
+        input, select, textarea { background: #334155; color: white; }
         button { background: #10b981; color: white; font-weight: bold; cursor: pointer; }
         button:hover { background: #059669; }
         .song-card { background: #334155; padding: 12px; margin-top: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
@@ -28,15 +28,30 @@
             <button onclick="signUp()">Kayıt Ol</button>
             <button onclick="signIn()">Giriş Yap</button>
         </div>
+
         <div id="app-section" style="display:none;">
             <h3 id="user-info"></h3>
             <button onclick="signOut()" style="background:#ef4444;">Çıkış Yap</button>
             <hr>
             <h3>Şarkı Yükle (Küratör Onaylı)</h3>
             <input type="text" id="song-title" placeholder="Şarkı Adı">
-            <input type="text" id="song-artist" placeholder="Sanatçı">
+            
+            <select id="song-genre">
+                <option value="Tekli (Single)">Tekli (Single)</option>
+                <option value="Albüm Parçası">Albüm Parçası</option>
+                <option value="Ambient / Slow">Ambient / Slow</option>
+            </select>
+
+            <input type="text" id="song-album" placeholder="Albüm Adı (Varsa)">
+            
             <label style="font-size: 13px; color: #94a3b8; display: block; margin-top: 5px;">MP3 / Ses Dosyası Seç (Cihazdan):</label>
-            <input type="file" id="song-file" accept="audio/*" style="background:#334155; padding: 8px;">
+            <input type="file" id="song-file" accept="audio/*">
+
+            <label style="font-size: 13px; color: #94a3b8; display: block; margin-top: 5px;">Kapak Görseli Seç (Cihazdan):</label>
+            <input type="file" id="cover-file" accept="image/*">
+
+            <textarea id="song-lyrics" placeholder="Şarkı Sözleri / Künye / Yapım Bilgileri..." rows="3"></textarea>
+
             <button id="upload-btn" onclick="uploadSong()">Şarkıyı Gönder</button>
             <hr>
             <h3>Yayınlanan Şarkılar</h3>
@@ -82,42 +97,40 @@
 
         async function uploadSong() {
             const title = document.getElementById('song-title').value;
-            const artist = document.getElementById('song-artist').value;
+            const genre = document.getElementById('song-genre').value;
+            const album = document.getElementById('song-album').value;
+            const lyrics = document.getElementById('song-lyrics').value;
             const fileInput = document.getElementById('song-file');
             const uploadBtn = document.getElementById('upload-btn');
 
-            if (!title || !artist || fileInput.files.length === 0) {
-                alert('Lütfen tüm alanları doldurun ve bir ses dosyası seçin!');
+            if (!title || fileInput.files.length === 0) {
+                alert('Lütfen şarkı adını girin ve bir ses dosyası seçin!');
                 return;
             }
 
             const file = fileInput.files[0];
             const fileExt = file.name.split('.').pop();
             const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-            const filePath = `${fileName}`;
 
             uploadBtn.innerText = 'Yükleniyor, lütfen bekleyin...';
             uploadBtn.disabled = true;
 
             try {
-                // Supabase Storage'a dosyayı yükle (Bucket adı: 'sarkilar')
                 const { data: storageData, error: storageError } = await supabase.storage
                     .from('sarkilar')
-                    .upload(filePath, file);
+                    .upload(fileName, file);
 
                 if (storageError) throw storageError;
 
-                // Dosyanın genel URL adresini al
                 const { data: { publicUrl } } = supabase.storage
                     .from('sarkilar')
-                    .getPublicUrl(filePath);
+                    .getPublicUrl(fileName);
 
                 const { data: { user } } = await supabase.auth.getUser();
 
-                // Veritabanına kaydet
                 const { error: dbError } = await supabase.from('songs').insert([{ 
                     title, 
-                    artist, 
+                    artist: user.email.split('@')[0], 
                     song_url: publicUrl, 
                     user_id: user.id, 
                     is_approved: false 
@@ -125,9 +138,10 @@
 
                 if (dbError) throw dbError;
 
-                alert('Şarkı küratör onayına gönderildi!');
+                alert('Şarkı başarıyla yüklendi ve küratör onayına gönderildi!');
                 document.getElementById('song-title').value = '';
-                document.getElementById('song-artist').value = '';
+                document.getElementById('song-album').value = '';
+                document.getElementById('song-lyrics').value = '';
                 fileInput.value = '';
                 loadSongs();
             } catch (error) {
