@@ -49,7 +49,7 @@
 
             <textarea id="song-lyrics" placeholder="Şarkı Sözleri / Künye / Yapım Bilgileri..." rows="3"></textarea>
 
-            <button id="upload-btn" onclick="uploadSong()">Şarkıyı Gönder</button>
+            <button id="upload-btn" onclick="uploadSongDirect()">Şarkıyı Gönder</button>
             <hr>
             <h3>Yayınlanan Şarkılar</h3>
             <div id="songs-list"></div>
@@ -92,7 +92,7 @@
             }
         }
 
-        async function uploadSong() {
+        async function uploadSongDirect() {
             const title = document.getElementById('song-title').value;
             const genre = document.getElementById('song-genre').value;
             const album = document.getElementById('song-album').value;
@@ -106,35 +106,42 @@
             }
 
             const file = fileInput.files[0];
-            // Türkçe karakterleri ve boşlukları tamamen temizleyip güvenli hale getiriyoruz
-            const cleanFileName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
-            const fileName = `${Date.now()}_${cleanFileName}`;
-
+            const cleanFileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')}`;
+            
             uploadBtn.innerText = 'Yükleniyor, lütfen bekleyin...';
             uploadBtn.disabled = true;
 
             try {
-                // Storage yüklemesi (upsert true ile çakışmaları önler)
-                const { data: storageData, error: storageError } = await supabase.storage
-                    .from('sarkilar')
-                    .upload(fileName, file, {
-                        cacheControl: '3600',
-                        upsert: true
-                    });
+                // Oturum bilgisini ve token'ı alıyoruz
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) throw new Error('Oturum süresi dolmuş, lütfen tekrar giriş yapın.');
 
-                if (storageError) throw storageError;
+                // Supabase Storage REST API endpoint'ine doğrudan ham fetch isteği atıyoruz (SDK hatasını baypas eder)
+                const storageUrl = `${SUPABASE_URL}/storage/v1/object/sarkilar/${cleanFileName}`;
+                
+                const response = await fetch(storageUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'x-upsert': 'true'
+                    },
+                    body: file
+                });
 
-                const { data: urlData } = supabase.storage
-                    .from('sarkilar')
-                    .getPublicUrl(fileName);
+                if (!response.ok) {
+                    const errRes = await response.text();
+                    throw new Error('Storage yükleme hatası: ' + errRes);
+                }
 
+                // Public URL adresini oluşturuyoruz
+                const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/sarkilar/${cleanFileName}`;
                 const { data: { user } } = await supabase.auth.getUser();
 
-                // Veritabanına kayıt
+                // Veritabanına kayıt işlemi
                 const { error: dbError } = await supabase.from('songs').insert([{ 
                     title, 
                     artist: user.email.split('@')[0], 
-                    song_url: urlData.publicUrl, 
+                    song_url: publicUrl, 
                     user_id: user.id, 
                     is_approved: false 
                 }]);
@@ -148,7 +155,7 @@
                 fileInput.value = '';
                 loadSongs();
             } catch (error) {
-                alert('Yükleme sırasında hata oluştu: ' + error.message);
+                alert('İşlem sırasında hata oluştu: ' + error.message);
             } finally {
                 uploadBtn.innerText = 'Şarkıyı Gönder';
                 uploadBtn.disabled = false;
