@@ -47,11 +47,6 @@
             <label style="font-size: 13px; color: #94a3b8; display: block; margin-top: 5px;">MP3 / Ses Dosyası Seç (Cihazdan):</label>
             <input type="file" id="song-file" accept="audio/*">
 
-            <input type="text" id="song-url-input" placeholder="Veya Ses Dosyası İnternet Linki (URL)">
-
-            <label style="font-size: 13px; color: #94a3b8; display: block; margin-top: 5px;">Kapak Görseli Seç (Cihazdan):</label>
-            <input type="file" id="cover-file" accept="image/*">
-
             <textarea id="song-lyrics" placeholder="Şarkı Sözleri / Künye / Yapım Bilgileri..." rows="3"></textarea>
 
             <button id="upload-btn" onclick="uploadSong()">Şarkıyı Gönder</button>
@@ -103,63 +98,57 @@
             const album = document.getElementById('song-album').value;
             const lyrics = document.getElementById('song-lyrics').value;
             const fileInput = document.getElementById('song-file');
-            const urlInput = document.getElementById('song-url-input').value.trim();
             const uploadBtn = document.getElementById('upload-btn');
 
-            if (!title || (fileInput.files.length === 0 && !urlInput)) {
-                alert('Lütfen şarkı adını girin ve bir ses dosyası seçin veya link ekleyin!');
+            if (!title || fileInput.files.length === 0) {
+                alert('Lütfen şarkı adını girin ve bir ses dosyası seçin!');
                 return;
             }
 
-            uploadBtn.innerText = 'İşleniyor, lütfen bekleyin...';
+            const file = fileInput.files[0];
+            // Türkçe karakterleri ve boşlukları tamamen temizleyip güvenli hale getiriyoruz
+            const cleanFileName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
+            const fileName = `${Date.now()}_${cleanFileName}`;
+
+            uploadBtn.innerText = 'Yükleniyor, lütfen bekleyin...';
             uploadBtn.disabled = true;
 
             try {
-                let publicUrl = urlInput;
+                // Storage yüklemesi (upsert true ile çakışmaları önler)
+                const { data: storageData, error: storageError } = await supabase.storage
+                    .from('sarkilar')
+                    .upload(fileName, file, {
+                        cacheControl: '3600',
+                        upsert: true
+                    });
 
-                // Eğer dosyayı cihazdan seçtiyse storage'a yüklemeyi dene
-                if (fileInput.files.length > 0) {
-                    const file = fileInput.files[0];
-                    const cleanFileName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
-                    const fileName = `${Date.now()}_${cleanFileName}`;
+                if (storageError) throw storageError;
 
-                    const { data: storageData, error: storageError } = await supabase.storage
-                        .from('sarkilar')
-                        .upload(fileName, file, {
-                            cacheControl: '3600',
-                            upsert: false
-                        });
-
-                    if (storageError) throw storageError;
-
-                    const { data: urlData } = supabase.storage
-                        .from('sarkilar')
-                        .getPublicUrl(fileName);
-                        
-                    publicUrl = urlData.publicUrl;
-                }
+                const { data: urlData } = supabase.storage
+                    .from('sarkilar')
+                    .getPublicUrl(fileName);
 
                 const { data: { user } } = await supabase.auth.getUser();
 
+                // Veritabanına kayıt
                 const { error: dbError } = await supabase.from('songs').insert([{ 
                     title, 
                     artist: user.email.split('@')[0], 
-                    song_url: publicUrl, 
+                    song_url: urlData.publicUrl, 
                     user_id: user.id, 
                     is_approved: false 
                 }]);
 
                 if (dbError) throw dbError;
 
-                alert('Şarkı başarıyla eklendi ve küratör onayına gönderildi!');
+                alert('Şarkı başarıyla yüklendi ve küratör onayına gönderildi!');
                 document.getElementById('song-title').value = '';
                 document.getElementById('song-album').value = '';
                 document.getElementById('song-lyrics').value = '';
-                document.getElementById('song-url-input').value = '';
                 fileInput.value = '';
                 loadSongs();
             } catch (error) {
-                alert('İşlem sırasında hata oluştu: ' + error.message);
+                alert('Yükleme sırasında hata oluştu: ' + error.message);
             } finally {
                 uploadBtn.innerText = 'Şarkıyı Gönder';
                 uploadBtn.disabled = false;
@@ -183,7 +172,6 @@
                 listDiv.innerHTML = '<p style="font-size:13px; color:#94a3b8; text-align:center; margin-top:10px;">Henüz onaylanmış şarkı yok.</p>';
             }
         }
-        checkTest(); // safe check
         checkUser();
     </script>
 </body>
