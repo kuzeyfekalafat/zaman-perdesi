@@ -374,31 +374,50 @@
 
     <header>
         <h1>Zaman Perdesi <span>Film</span></h1>
-        <button class="admin-btn" onclick="openModalForAdd()">+ Film Ekle</button>
+        <!-- Admin Giriş Butonu -->
+        <button class="admin-btn" id="mainAdminBtn" onclick="handleAdminClick()">🔒 Admin Girişi</button>
     </header>
 
     <main>
         <div id="homeView">
             <h2 style="margin-bottom: 15px; font-size: 1.1rem; border-left: 4px solid var(--accent-color); padding-left: 8px;">Arşivdeki Projeler</h2>
-            <div class="film-grid" id="filmGrid"></div>
+            <div class="film-grid" id="filmGrid">Yükleniyor...</div>
         </div>
 
         <div id="detailView" class="detail-container">
             <div class="nav-bar">
                 <span class="back-link" onclick="goHome()">&larr; Arşive Geri Dön</span>
-                <button class="edit-btn" id="editProjectBtn">✏️ Projeyi Düzenle</button>
+                <button class="edit-btn" id="editProjectBtn" style="display:none;" onclick="openEditModalFromDetail()">✏️ Projeyi Düzenle</button>
             </div>
             <div id="detailContent"></div>
         </div>
     </main>
 
+    <!-- Giriş Modalı -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <button class="close-btn" onclick="closeLoginModal()">&times;</button>
+            <h2 style="margin-bottom: 15px; font-size: 1.2rem; color: var(--accent-color);">Admin Girişi</h2>
+            <div class="form-group">
+                <label>E-posta</label>
+                <input type="email" id="adminEmail" class="form-control" placeholder="admin@zamanperdesifilm.com.tr">
+            </div>
+            <div class="form-group">
+                <label>Şifre</label>
+                <input type="password" id="adminPassword" class="form-control" placeholder="••••••••">
+            </div>
+            <button type="button" class="submit-btn" onclick="loginAdmin()">Giriş Yap</button>
+        </div>
+    </div>
+
+    <!-- Film Ekleme / Düzenleme Modalı -->
     <div class="modal" id="adminModal">
         <div class="modal-content">
             <button class="close-btn" onclick="closeModal()">&times;</button>
             <h2 id="modalTitle" style="margin-bottom: 15px; font-size: 1.2rem;">Yeni Film / Senaryo Ekle</h2>
             
-            <form id="filmForm" onsubmit="saveFilm(event)">
-                <input type="hidden" id="editIndex" value="-1">
+            <form id="filmForm" onsubmit="saveFilmToFirebase(event)">
+                <input type="hidden" id="editDocId" value="">
                 <div class="form-group">
                     <label>Film / Senaryo Adı</label>
                     <input type="text" id="fAd" class="form-control" required>
@@ -484,112 +503,118 @@
         <p>&copy; 2026 <a href="https://zamanperdesifilm.com.tr" target="_blank">zamanperdesifilm.com.tr</a>. Tüm hakları saklıdır.</p>
     </footer>
 
-    <script>
-        let filmler = JSON.parse(localStorage.getItem('zamanPerdesiFilmler')) || [];
-        let currentDetailIndex = -1;
+    <!-- Firebase SDK Entegrasyonu -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Firebase Yapılandırma Bilgilerin (ZamanPerdesiFilm)
+        const firebaseConfig = {
+            apiKey: "SENIN_API_KEY",
+            authDomain: "zamanperdesifilm-db723.firebaseapp.com",
+            projectId: "zamanperdesifilm-db723",
+            storageBucket: "zamanperdesifilm-db723.appspot.com",
+            messagingSenderId: "SENIN_SENDER_ID",
+            appId: "SENIN_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let filmlerListesi = [];
+        let currentUser = null;
+        let activeDetailIndex = -1;
+
+        // Oturum Durumu Takibi
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            const btn = document.getElementById('mainAdminBtn');
+            const editBtn = document.getElementById('editProjectBtn');
+            
+            if (user) {
+                btn.innerText = "+ Film Ekle (Çıkış Yap)";
+                if(activeDetailIndex !== -1) editBtn.style.display = 'block';
+            } else {
+                btn.innerText = "🔒 Admin Girişi";
+                editBtn.style.display = 'none';
+            }
+        });
+
+        window.handleAdminClick = function() {
+            if (currentUser) {
+                if (confirm("Çıkış yapmak istiyor musunuz?")) {
+                    signOut(auth).then(() => alert("Çıkış yapıldı."));
+                }
+            } else {
+                document.getElementById('loginModal').style.display = 'flex';
+            }
+        }
+
+        window.closeLoginModal = function() {
+            document.getElementById('loginModal').style.display = 'none';
+        }
+
+        window.loginAdmin = async function() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                closeLoginModal();
+                alert("Admin girişi başarılı!");
+            } catch (error) {
+                alert("Giriş hatası: " + error.message);
+            }
+        }
+
+        // Filmleri Firestore'dan Çekme
+        async function fetchFilms() {
+            const grid = document.getElementById('filmGrid');
+            grid.innerHTML = '<div class="empty-msg" style="grid-column: 1/-1;">Arşiv yükleniyor...</div>';
+            try {
+                const querySnapshot = await getDocs(collection(db, "films"));
+                filmlerListesi = [];
+                querySnapshot.forEach((docSnap) => {
+                    filmlerListesi.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                renderGrid();
+            } catch (error) {
+                grid.innerHTML = `<div class="empty-msg" style="grid-column: 1/-1;">Veriler yüklenirken hata oluştu: ${error.message}</div>`;
+            }
+        }
 
         function renderGrid() {
             const grid = document.getElementById('filmGrid');
             grid.innerHTML = '';
             
-            if (filmler.length === 0) {
-                grid.innerHTML = `<div class="empty-msg" style="grid-column: 1/-1;">Henüz arşivde film veya senaryo bulunmuyor. Sağ üstteki "+ Film Ekle" butonunu kullanarak ilk projenizi ekleyebilirsiniz.</div>`;
+            if (filmlerListesi.length === 0) {
+                grid.innerHTML = `<div class="empty-msg" style="grid-column: 1/-1;">Henüz arşivde film veya senaryo bulunmuyor.</div>`;
                 return;
             }
 
-            filmler.forEach((film, index) => {
+            filmlerListesi.forEach((film, index) => {
                 grid.innerHTML += `
                     <div class="film-card" onclick="showDetail(${index})">
-                        <img src="${film.afis}" class="film-poster" alt="${film.ad}">
+                        <img src="${film.afis || ''}" class="film-poster" alt="${film.ad}">
                         <div class="film-card-info">
                             <h3>${film.ad}</h3>
-                            <p>${film.yil} &bull; ${film.tur}</p>
+                            <p>${film.yil || ''} &bull; ${film.tur || ''}</p>
                         </div>
                     </div>
                 `;
             });
         }
 
-        function openModalForAdd() {
-            document.getElementById('editIndex').value = -1;
-            document.getElementById('modalTitle').innerText = "Yeni Film / Senaryo Ekle";
-            document.getElementById('submitBtnText').innerText = "Filmi / Senaryoyu Kaydet";
-            document.getElementById('filmForm').reset();
-            document.getElementById('adminModal').style.display = 'flex';
-        }
-
-        function closeModal() { document.getElementById('adminModal').style.display = 'none'; }
-
-        function saveFilm(e) {
-            e.preventDefault();
-            const editIndex = parseInt(document.getElementById('editIndex').value);
-            const dosyaInput = document.getElementById('fAfisDosya');
-            
-            function processSave(afisUrl) {
-                const yeniFilm = {
-                    ad: document.getElementById('fAd').value,
-                    slogan: document.getElementById('fSlogan').value,
-                    tur: document.getElementById('fTur').value,
-                    yil: document.getElementById('fYil').value,
-                    sure: document.getElementById('fSure').value,
-                    konu: document.getElementById('fKonu').value,
-                    tema: document.getElementById('fTema').value,
-                    perde1: document.getElementById('fPerde1').value,
-                    perde2: document.getElementById('fPerde2').value,
-                    perde3: document.getElementById('fPerde3').value,
-                    yonetmen: document.getElementById('fYonetmen').value,
-                    senarist: document.getElementById('fSenarist').value,
-                    yapimci: document.getElementById('fYapimci').value,
-                    yapimSirketi: document.getElementById('fYapimSirketi').value,
-                    yapim: document.getElementById('fYapim').value,
-                    ulke: document.getElementById('fUlke').value,
-                    website: document.getElementById('fWebSite').value,
-                    goruntu: document.getElementById('fGoruntu').value,
-                    kurgu: document.getElementById('fKurgu').value,
-                    oyuncular: document.getElementById('fOyuncular').value,
-                    afis: afisUrl
-                };
-
-                if (editIndex === -1) {
-                    filmler.push(yeniFilm);
-                } else {
-                    filmler[editIndex] = yeniFilm;
-                }
-
-                localStorage.setItem('zamanPerdesiFilmler', JSON.stringify(filmler));
-                closeModal();
-                document.getElementById('filmForm').reset();
-                renderGrid();
-
-                if (editIndex !== -1) {
-                    showDetail(editIndex);
-                }
-            }
-
-            if (dosyaInput.files && dosyaInput.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(uploadEvent) {
-                    processSave(uploadEvent.target.result);
-                };
-                reader.readAsDataURL(dosyaInput.files[0]);
-            } else {
-                if (editIndex !== -1) {
-                    processSave(filmler[editIndex].afis);
-                } else {
-                    alert('Lütfen bir afiş seçin.');
-                }
-            }
-        }
-
-        function showDetail(index) {
-            currentDetailIndex = index;
-            const film = filmler[index];
+        window.showDetail = function(index) {
+            activeDetailIndex = index;
+            const film = filmlerListesi[index];
             document.getElementById('homeView').style.display = 'none';
             document.getElementById('detailView').style.display = 'block';
 
-            document.getElementById('editProjectBtn').onclick = function() {
-                openEditModal(index);
-            };
+            if (currentUser) {
+                document.getElementById('editProjectBtn').style.display = 'block';
+            }
 
             const ulkeBilgisi = film.ulke ? film.ulke : 'Türkiye';
             const yapimBilgisi = film.yapim ? film.yapim : '0-NOKTA FİLM';
@@ -598,53 +623,54 @@
 
             document.getElementById('detailContent').innerHTML = `
                 <div class="detail-header">
-                    <img src="${film.afis}" class="detail-poster" alt="${film.ad}">
+                    <img src="${film.afis || ''}" class="detail-poster" alt="${film.ad}">
                     <div class="detail-meta-box">
                         <h2 class="detail-title">${film.ad}</h2>
-                        <div class="detail-slogan">"${film.slogan}"</div>
+                        <div class="detail-slogan">"${film.slogan || ''}"</div>
                         <div class="badge-row">
-                            <span class="badge">📅 ${film.yil}</span>
-                            <span class="badge">⏳ ${film.sure}</span>
+                            <span class="badge">📅 ${film.yil || ''}</span>
+                            <span class="badge">⏳ ${film.sure || ''}</span>
                         </div>
                         <div class="badge-row">
-                            <span class="badge">🎬 ${film.tur}</span>
+                            <span class="badge">🎬 ${film.tur || ''}</span>
                             <span class="badge">🌍 ${ulkeBilgisi}</span>
                             <a href="${webUrl}" target="_blank" class="badge link-badge">🌐 ${webAdresi}</a>
                         </div>
-                        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; margin-bottom: 8px;"><b>Konu:</b> ${film.konu}</p>
-                        <p style="color: var(--text-muted); font-size: 0.8rem;"><b>Tema:</b> ${film.tema}</p>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; margin-bottom: 8px;"><b>Konu:</b> ${film.konu || ''}</p>
+                        <p style="color: var(--text-muted); font-size: 0.8rem;"><b>Tema:</b> ${film.tema || ''}</p>
                     </div>
                 </div>
 
                 <div class="section-box">
                     <h3>3 Perde Uzun Akışı</h3>
-                    <p style="margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem;"><b>1. Perde (Serim):</b> ${film.perde1}</p>
-                    <p style="margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem;"><b>2. Perde (Gelişme):</b> ${film.perde2}</p>
-                    <p style="color: var(--text-muted); font-size: 0.9rem;"><b>3. Perde (Çözüm):</b> ${film.perde3}</p>
+                    <p style="margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem;"><b>1. Perde (Serim):</b> ${film.perde1 || ''}</p>
+                    <p style="margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem;"><b>2. Perde (Gelişme):</b> ${film.perde2 || ''}</p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;"><b>3. Perde (Çözüm):</b> ${film.perde3 || ''}</p>
                 </div>
 
                 <div class="section-box">
                     <h3>Künye Kadrosu</h3>
                     <div class="crew-grid">
-                        <div class="crew-item"><span>Yönetmen</span><b>${film.yonetmen}</b></div>
-                        <div class="crew-item"><span>Senarist</span><b>${film.senarist}</b></div>
-                        <div class="crew-item"><span>Yapımcı</span><b>${film.yapimci}</b></div>
+                        <div class="crew-item"><span>Yönetmen</span><b>${film.yonetmen || ''}</b></div>
+                        <div class="crew-item"><span>Senarist</span><b>${film.senarist || ''}</b></div>
+                        <div class="crew-item"><span>Yapımcı</span><b>${film.yapimci || ''}</b></div>
                         <div class="crew-item"><span>Yapım</span><b>${yapimBilgisi}</b></div>
                         <div class="crew-item"><span>Yapım Şirketi</span><b>${film.yapimSirketi || '-'}</b></div>
                         <div class="crew-item"><span>Ülke</span><b>${ulkeBilgisi}</b></div>
-                        <div class="crew-item"><span>Görüntü Yönetmeni</span><b>${film.goruntu}</b></div>
-                        <div class="crew-item"><span>Kurgu</span><b>${film.kurgu}</b></div>
+                        <div class="crew-item"><span>Görüntü Yönetmeni</span><b>${film.goruntu || ''}</b></div>
+                        <div class="crew-item"><span>Kurgu</span><b>${film.kurgu || ''}</b></div>
                         <div class="crew-item"><span>Web Sitesi</span><b><a href="${webUrl}" target="_blank">${webAdresi}</a></b></div>
-                        <div class="crew-item" style="grid-column: span 2;"><span>Oyuncular</span><b>${film.oyuncular}</b></div>
+                        <div class="crew-item" style="grid-column: span 2;"><span>Oyuncular</span><b>${film.oyuncular || ''}</b></div>
                     </div>
                 </div>
             `;
             window.scrollTo(0,0);
         }
 
-        function openEditModal(index) {
-            const film = filmler[index];
-            document.getElementById('editIndex').value = index;
+        window.openEditModalFromDetail = function() {
+            if (activeDetailIndex === -1) return;
+            const film = filmlerListesi[activeDetailIndex];
+            document.getElementById('editDocId').value = film.id;
             document.getElementById('modalTitle').innerText = "Projeyi Düzenle";
             document.getElementById('submitBtnText').innerText = "Değişiklikleri Güncelle";
 
@@ -673,13 +699,99 @@
             document.getElementById('adminModal').style.display = 'flex';
         }
 
-        function goHome() {
-            document.getElementById('detailView').style.display = 'none';
-            document.getElementById('homeView').style.display = 'block';
-            renderGrid();
+        // Ana Butondan Tetiklenen Ekleme Fonksiyonu
+        window.handleAdminClick = function() {
+            if (currentUser) {
+                // Eğer detay sayfasındayken veya ana sayfadayken film eklemek isterse
+                document.getElementById('editDocId').value = "";
+                document.getElementById('modalTitle').innerText = "Yeni Film / Senaryo Ekle";
+                document.getElementById('submitBtnText').innerText = "Filmi / Senaryoyu Kaydet";
+                document.getElementById('filmForm').reset();
+                document.getElementById('adminModal').style.display = 'flex';
+            } else {
+                document.getElementById('loginModal').style.display = 'flex';
+            }
         }
 
-        renderGrid();
+        window.closeModal = function() { 
+            document.getElementById('adminModal').style.display = 'none'; 
+        }
+
+        window.saveFilmToFirebase = async function(e) {
+            e.preventDefault();
+            const docId = document.getElementById('editDocId').value;
+            const dosyaInput = document.getElementById('fAfisDosya');
+
+            async function saveToDb(afisUrl) {
+                const filmData = {
+                    ad: document.getElementById('fAd').value,
+                    slogan: document.getElementById('fSlogan').value,
+                    tur: document.getElementById('fTur').value,
+                    yil: document.getElementById('fYil').value,
+                    sure: document.getElementById('fSure').value,
+                    konu: document.getElementById('fKonu').value,
+                    tema: document.getElementById('fTema').value,
+                    perde1: document.getElementById('fPerde1').value,
+                    perde2: document.getElementById('fPerde2').value,
+                    perde3: document.getElementById('fPerde3').value,
+                    yonetmen: document.getElementById('fYonetmen').value,
+                    senarist: document.getElementById('fSenarist').value,
+                    yapimci: document.getElementById('fYapimci').value,
+                    yapimSirketi: document.getElementById('fYapimSirketi').value,
+                    yapim: document.getElementById('fYapim').value,
+                    ulke: document.getElementById('fUlke').value,
+                    website: document.getElementById('fWebSite').value,
+                    goruntu: document.getElementById('fGoruntu').value,
+                    kurgu: document.getElementById('fKurgu').value,
+                    oyuncular: document.getElementById('fOyuncular').value,
+                    afis: afisUrl
+                };
+
+                try {
+                    if (!docId) {
+                        await addDoc(collection(db, "films"), filmData);
+                        alert("Film başarıyla eklendi!");
+                    } else {
+                        await updateDoc(doc(db, "films", docId), filmData);
+                        alert("Film güncellendi!");
+                    }
+                    closeModal();
+                    document.getElementById('filmForm').reset();
+                    fetchFilms();
+                    if(docId && activeDetailIndex !== -1) {
+                        // Güncellenen veriyi yansıtmak için detayı tazele
+                        setTimeout(() => showDetail(activeDetailIndex), 500);
+                    }
+                } catch (err) {
+                    alert("Kayıt hatası: " + err.message);
+                }
+            }
+
+            if (dosyaInput.files && dosyaInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(uploadEvent) {
+                    saveToDb(uploadEvent.target.result);
+                };
+                reader.readAsDataURL(dosyaInput.files[0]);
+            } else {
+                if (docId) {
+                    const existingFilm = filmlerListesi.find(f => f.id === docId);
+                    saveToDb(existingFilm.afis);
+                } else {
+                    alert('Lütfen bir afiş görseli seçin.');
+                }
+            }
+        }
+
+        window.goHome = function() {
+            activeDetailIndex = -1;
+            document.getElementById('detailView').style.display = 'none';
+            document.getElementById('homeView').style.display = 'block';
+            fetchFilms();
+        }
+
+        // Sayfa açıldığında filmleri buluttan getir
+        fetchFilms();
     </script>
 </body>
 </html>
