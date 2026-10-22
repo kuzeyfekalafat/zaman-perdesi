@@ -9,7 +9,6 @@
             --bg-color: #0b0f19;
             --card-bg: #131b2e;
             --accent-color: #e50914;
-            --imdb-color: #f5c518;
             --text-main: #f3f4f6;
             --text-muted: #9ca3af;
             --border-color: #1f293d;
@@ -277,6 +276,13 @@
             font-size: 0.75rem;
         }
 
+        .empty-msg {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 40px 20px;
+            font-size: 0.95rem;
+        }
+
         footer {
             text-align: center;
             padding: 20px;
@@ -390,33 +396,18 @@
     </footer>
 
     <script>
-        let filmler = JSON.parse(localStorage.getItem('zamanPerdesiFilmler')) || [
-            {
-                ad: "Kayıp Zamanın İzinde",
-                slogan: "Zaman bükülür, sırlar açığa çıkar.",
-                tur: "Dram / Gizem",
-                yil: "2026",
-                sure: "120 dk",
-                konu: "Geçmişin tozlu sayfaları arasında kaybolmuş bir adamın gerçeği arayış hikayesi.",
-                tema: "Zaman, Pişmanlık, Hafıza",
-                perde1: "Karakterin sıradan hayatı ve geçmişten gelen gizemli bir mektupla sarsılması.",
-                perde2: "İpuçlarının peşinden giderken karşılaştığı engeller ve artan gerilim.",
-                perde3: "Sırların çözüldüğü ve büyük yüzleşmenin gerçekleştiği final perdesi.",
-                yonetmen: "Kuzeyfe Kalafat",
-                senarist: "Kuzeyfe Kalafat",
-                yapimci: "Zaman Perdesi",
-                yapimSirketi: "Zaman Perdesi Yapım",
-                yapim: "Türkiye",
-                goruntu: "Ahmet Yılmaz",
-                kurgu: "Mehmet Demir",
-                oyuncular: "Can Yaman, Elçin Sangu",
-                afis: "IMG_20240410_193358.jpg"
-            }
-        ];
+        // Arşiv tamamen boş başlar
+        let filmler = JSON.parse(localStorage.getItem('zamanPerdesiFilmler')) || [];
 
         function renderGrid() {
             const grid = document.getElementById('filmGrid');
             grid.innerHTML = '';
+            
+            if (filmler.length === 0) {
+                grid.innerHTML = `<div class="empty-msg" style="grid-column: 1/-1;">Henüz arşivde film veya senaryo bulunmuyor. Sağ üstteki "+ Film / Senaryo Ekle" butonunu kullanarak ilk projenizi ekleyebilirsiniz.</div>`;
+                return;
+            }
+
             filmler.forEach((film, index) => {
                 grid.innerHTML += `
                     <div class="film-card" onclick="showDetail(${index})">
@@ -459,7 +450,7 @@
                         goruntu: document.getElementById('fGoruntu').value,
                         kurgu: document.getElementById('fKurgu').value,
                         oyuncular: document.getElementById('fOyuncular').value,
-                        afis: uploadEvent.target.result // Seçilen görselin verisi
+                        afis: uploadEvent.target.result
                     };
 
                     filmler.push(yeniFilm);
