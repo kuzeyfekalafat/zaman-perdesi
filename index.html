@@ -31,7 +31,7 @@
         }
 
         header {
-            padding: 20px;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -43,7 +43,7 @@
         }
 
         header h1 {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             letter-spacing: 2px;
             text-transform: uppercase;
         }
@@ -56,34 +56,43 @@
             background-color: var(--accent-color);
             color: white;
             border: none;
-            padding: 8px 15px;
+            padding: 7px 12px;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
 
         main {
             max-width: 900px;
             width: 100%;
             margin: 0 auto;
-            padding: 25px 15px;
+            padding: 20px 10px;
             flex: 1;
         }
 
         .film-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        @media (min-width: 600px) {
+            .film-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 15px;
+            }
         }
 
         .film-card {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
+            border-radius: 10px;
             overflow: hidden;
             cursor: pointer;
-            transition: transform 0.3s;
+            transition: transform 0.3s, border-color 0.3s;
+            display: flex;
+            flex-direction: column;
         }
 
         .film-card:hover {
@@ -93,24 +102,36 @@
 
         .film-poster {
             width: 100%;
-            height: 320px;
+            height: 220px;
             object-fit: cover;
             background-color: #1a233a;
         }
 
+        @media (min-width: 600px) {
+            .film-poster {
+                height: 280px;
+            }
+        }
+
         .film-card-info {
-            padding: 15px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex: 1;
         }
 
         .film-card-info h3 {
-            font-size: 1.1rem;
-            margin-bottom: 5px;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .film-card-info p {
             color: var(--text-muted);
-            font-size: 0.85rem;
-            margin-bottom: 10px;
+            font-size: 0.75rem;
         }
 
         .modal {
@@ -128,12 +149,12 @@
         .modal-content {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
-            max-width: 650px;
+            max-width: 600px;
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
-            padding: 25px;
-            border-radius: 14px;
+            padding: 20px;
+            border-radius: 12px;
             position: relative;
         }
 
@@ -146,46 +167,46 @@
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .form-group label {
             display: block;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             font-weight: 600;
         }
 
         .form-control {
             width: 100%;
-            padding: 10px;
+            padding: 8px 10px;
             background-color: #0b0f19;
             border: 1px solid var(--border-color);
             color: var(--text-main);
             border-radius: 6px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         input[type="file"].form-control {
-            padding: 7px;
+            padding: 5px;
             cursor: pointer;
         }
 
         textarea.form-control {
             resize: vertical;
-            min-height: 80px;
+            min-height: 70px;
         }
 
         .submit-btn {
             background-color: var(--accent-color);
             color: white;
             border: none;
-            padding: 12px;
+            padding: 10px;
             width: 100%;
             border-radius: 6px;
             font-weight: bold;
-            font-size: 1rem;
+            font-size: 0.9rem;
             cursor: pointer;
             margin-top: 10px;
         }
@@ -200,97 +221,105 @@
             display: inline-block;
             margin-bottom: 15px;
             font-weight: 600;
+            font-size: 0.9rem;
         }
 
         .detail-header {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             flex-wrap: wrap;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             align-items: flex-start;
         }
 
         .detail-poster {
-            width: 180px;
-            height: 260px;
+            width: 140px;
+            height: 200px;
             object-fit: cover;
-            border-radius: 10px;
+            border-radius: 8px;
             border: 1px solid var(--border-color);
             flex-shrink: 0;
         }
 
+        @media (min-width: 600px) {
+            .detail-poster {
+                width: 180px;
+                height: 260px;
+            }
+        }
+
         .detail-meta-box {
             flex: 1;
-            min-width: 250px;
+            min-width: 220px;
         }
 
         .detail-title {
-            font-size: 1.8rem;
-            margin-bottom: 5px;
+            font-size: 1.5rem;
+            margin-bottom: 4px;
         }
 
         .detail-slogan {
             color: var(--accent-color);
             font-style: italic;
-            font-size: 0.95rem;
-            margin-bottom: 15px;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
         }
 
         .badge-row {
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 8px;
+            margin-bottom: 12px;
             flex-wrap: wrap;
         }
 
         .badge {
             background: #1f293d;
-            padding: 5px 12px;
+            padding: 4px 10px;
             border-radius: 6px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
 
         .section-box {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
         }
 
         .section-box h3 {
-            font-size: 1.1rem;
-            margin-bottom: 10px;
+            font-size: 1rem;
+            margin-bottom: 8px;
             border-left: 4px solid var(--accent-color);
             padding-left: 8px;
         }
 
         .crew-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 10px;
-            font-size: 0.9rem;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 8px;
+            font-size: 0.85rem;
         }
 
         .crew-item span {
             color: var(--text-muted);
             display: block;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
         }
 
         .empty-msg {
             text-align: center;
             color: var(--text-muted);
-            padding: 40px 20px;
-            font-size: 0.95rem;
+            padding: 30px 15px;
+            font-size: 0.9rem;
         }
 
         footer {
             text-align: center;
-            padding: 20px;
+            padding: 15px;
             border-top: 1px solid var(--border-color);
             color: var(--text-muted);
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             background: rgba(11, 15, 25, 0.95);
         }
     </style>
@@ -299,12 +328,12 @@
 
     <header>
         <h1>Zaman Perdesi <span>Film</span></h1>
-        <button class="admin-btn" onclick="openModal()">+ Film / Senaryo Ekle</button>
+        <button class="admin-btn" onclick="openModal()">+ Film Ekle</button>
     </header>
 
     <main>
         <div id="homeView">
-            <h2 style="margin-bottom: 20px; font-size: 1.2rem; border-left: 4px solid var(--accent-color); padding-left: 10px;">Arşivdeki Projeler</h2>
+            <h2 style="margin-bottom: 15px; font-size: 1.1rem; border-left: 4px solid var(--accent-color); padding-left: 8px;">Arşivdeki Projeler</h2>
             <div class="film-grid" id="filmGrid"></div>
         </div>
 
@@ -317,7 +346,7 @@
     <div class="modal" id="adminModal">
         <div class="modal-content">
             <button class="close-btn" onclick="closeModal()">&times;</button>
-            <h2 style="margin-bottom: 20px; font-size: 1.3rem;">Yeni Film / Senaryo Ekle</h2>
+            <h2 style="margin-bottom: 15px; font-size: 1.2rem;">Yeni Film / Senaryo Ekle</h2>
             
             <form id="filmForm" onsubmit="saveFilm(event)">
                 <div class="form-group">
@@ -326,20 +355,20 @@
                 </div>
                 <div class="form-group">
                     <label>Slogan</label>
-                    <input type="text" id="fSlogan" class="form-control" placeholder="Örn: Zamanın ötesinde bir yolculuk...">
+                    <input type="text" id="fSlogan" class="form-control" placeholder="Örn: Zaman durduğunda...">
                 </div>
                 <div class="form-group" style="display: flex; gap: 10px;">
                     <div style="flex:1;">
                         <label>Tür</label>
-                        <input type="text" id="fTur" class="form-control" placeholder="Dram, Gerilim">
+                        <input type="text" id="fTur" class="form-control" placeholder="Aksiyon, Dram">
                     </div>
                     <div style="flex:1;">
                         <label>Yapım Yılı</label>
-                        <input type="text" id="fYil" class="form-control" placeholder="2026">
+                        <input type="text" id="fYil" class="form-control" placeholder="2030">
                     </div>
                     <div style="flex:1;">
                         <label>Süre</label>
-                        <input type="text" id="fSure" class="form-control" placeholder="120 dk">
+                        <input type="text" id="fSure" class="form-control" placeholder="90 dk">
                     </div>
                 </div>
                 <div class="form-group">
@@ -348,10 +377,10 @@
                 </div>
                 <div class="form-group">
                     <label>Tema</label>
-                    <input type="text" id="fTema" class="form-control" placeholder="Yalnızlık, Zaman, Adalet">
+                    <input type="text" id="fTema" class="form-control" placeholder="Hafıza, İhanet...">
                 </div>
                 
-                <h3 style="font-size: 1rem; color: var(--accent-color); margin: 15px 0 10px 0;">3 Perde Uzun Akışı</h3>
+                <h3 style="font-size: 0.95rem; color: var(--accent-color); margin: 12px 0 8px 0;">3 Perde Uzun Akışı</h3>
                 <div class="form-group">
                     <label>1. Perde (Serim / Giriş)</label>
                     <textarea id="fPerde1" class="form-control"></textarea>
@@ -365,7 +394,7 @@
                     <textarea id="fPerde3" class="form-control"></textarea>
                 </div>
 
-                <h3 style="font-size: 1rem; color: var(--accent-color); margin: 15px 0 10px 0;">Künye Bilgileri</h3>
+                <h3 style="font-size: 0.95rem; color: var(--accent-color); margin: 12px 0 8px 0;">Künye Bilgileri</h3>
                 <div class="form-group" style="display: flex; gap: 10px;">
                     <div style="flex:1;"><label>Yönetmen</label><input type="text" id="fYonetmen" class="form-control"></div>
                     <div style="flex:1;"><label>Senarist</label><input type="text" id="fSenarist" class="form-control"></div>
@@ -384,7 +413,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Film Afişi Seç (Galeriden / Dosyadan)</label>
+                    <label>Film Afişi Seç (Dikey / Dikdörtgen)</label>
                     <input type="file" id="fAfisDosya" class="form-control" accept="image/*" required>
                 </div>
 
@@ -405,7 +434,7 @@
             grid.innerHTML = '';
             
             if (filmler.length === 0) {
-                grid.innerHTML = `<div class="empty-msg" style="grid-column: 1/-1;">Henüz arşivde film veya senaryo bulunmuyor. Sağ üstteki "+ Film / Senaryo Ekle" butonunu kullanarak ilk projenizi ekleyebilirsiniz.</div>`;
+                grid.innerHTML = `<div class="empty-msg" style="grid-column: 1/-1;">Henüz arşivde film veya senaryo bulunmuyor. Sağ üstteki "+ Film Ekle" butonunu kullanarak ilk projenizi ekleyebilirsiniz.</div>`;
                 return;
             }
 
@@ -414,8 +443,8 @@
                     <div class="film-card" onclick="showDetail(${index})">
                         <img src="${film.afis}" class="film-poster" alt="${film.ad}">
                         <div class="film-card-info">
-                            <h3>${film.ad} (${film.yil})</h3>
-                            <p>${film.tur} | ${film.sure}</p>
+                            <h3>${film.ad}</h3>
+                            <p>${film.yil} &bull; ${film.tur}</p>
                         </div>
                     </div>
                 `;
@@ -476,21 +505,21 @@
                         <h2 class="detail-title">${film.ad}</h2>
                         <div class="detail-slogan">"${film.slogan}"</div>
                         <div class="badge-row">
-                            <span class="badge">📅 ${film.yil}</span>
-                            <span class="badge">⏳ ${film.sure}</span>
-                            <span class="badge">🎬 ${film.tur}</span>
-                            <span class="badge">🌍 ${film.yapim}</span>
+                            <span class="badge">&U125; ${film.yil}</span>
+                            <span class="badge">&amp; <b>${film.sure}</b></span>
+                            <span class="badge">&#127916; ${film.tur}</span>
+                            <span class="badge">&#127757; ${film.yapim}</span>
                         </div>
-                        <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; margin-bottom: 10px;"><b>Konu:</b> ${film.konu}</p>
-                        <p style="color: var(--text-muted); font-size: 0.9rem;"><b>Tema:</b> ${film.tema}</p>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; margin-bottom: 8px;"><b>Konu:</b> ${film.konu}</p>
+                        <p style="color: var(--text-muted); font-size: 0.8rem;"><b>Tema:</b> ${film.tema}</p>
                     </div>
                 </div>
 
                 <div class="section-box">
                     <h3>3 Perde Uzun Akışı</h3>
-                    <p style="margin-bottom: 10px; color: var(--text-muted);"><b>1. Perde (Serim):</b> ${film.perde1}</p>
-                    <p style="margin-bottom: 10px; color: var(--text-muted);"><b>2. Perde (Gelişme):</b> ${film.perde2}</p>
-                    <p style="color: var(--text-muted);"><b>3. Perde (Çözüm):</b> ${film.perde3}</p>
+                    <p style="margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem;"><b>1. Perde (Serim):</b> ${film.perde1}</p>
+                    <p style="margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem;"><b>2. Perde (Gelişme):</b> ${film.perde2}</p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;"><b>3. Perde (Çözüm):</b> ${film.perde3}</p>
                 </div>
 
                 <div class="section-box">
