@@ -52,6 +52,12 @@
             color: var(--accent-color);
         }
 
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
         .admin-btn {
             background-color: var(--accent-color);
             color: white;
@@ -61,6 +67,21 @@
             cursor: pointer;
             font-weight: bold;
             font-size: 0.8rem;
+        }
+
+        .backup-btn {
+            background-color: #1f293d;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 7px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .backup-btn:hover {
+            border-color: var(--accent-color);
         }
 
         main {
@@ -374,7 +395,12 @@
 
     <header>
         <h1>Zaman Perdesi <span>Film</span></h1>
-        <button class="admin-btn" onclick="openModalForAdd()">+ Film Ekle</button>
+        <div class="header-actions">
+            <button class="backup-btn" onclick="exportData()" title="Arşivi İndir">📥 Yedekle</button>
+            <button class="backup-btn" onclick="triggerImport()" title="Yedek Dosyası Yükle">📤 Yükle</button>
+            <input type="file" id="importFileInput" style="display:none" accept=".json" onchange="importData(event)">
+            <button class="admin-btn" onclick="openModalForAdd()">+ Film Ekle</button>
+        </div>
     </header>
 
     <main>
@@ -677,6 +703,48 @@
             document.getElementById('detailView').style.display = 'none';
             document.getElementById('homeView').style.display = 'block';
             renderGrid();
+        }
+
+        // --- YEDEKLEME VE YÜKLEME FONKSİYONLARI ---
+        function exportData() {
+            if (filmler.length === 0) {
+                alert('İndirilecek film kaydı bulunmuyor.');
+                return;
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(filmler));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "zaman_perdesi_arsiv.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function triggerImport() {
+            document.getElementById('importFileInput').click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedFilmler = JSON.parse(e.target.result);
+                    if (Array.isArray(importedFilmler)) {
+                        filmler = importedFilmler;
+                        localStorage.setItem('zamanPerdesiFilmler', JSON.stringify(filmler));
+                        renderGrid();
+                        alert('Arşiviniz başarıyla yüklendi!');
+                    } else {
+                        alert('Geçersiz yedek dosyası formatı.');
+                    }
+                } catch (err) {
+                    alert('Dosya okunurken bir hata oluştu.');
+                }
+            };
+            reader.readAsText(file);
         }
 
         renderGrid();
