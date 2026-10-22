@@ -320,7 +320,7 @@
         .crew-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 8px;
+            gap: 10px;
             font-size: 0.85rem;
         }
 
@@ -431,7 +431,7 @@
                     <div style="flex:1;"><label>Yapım Şirketi</label><input type="text" id="fYapimSirketi" class="form-control"></div>
                 </div>
                 <div class="form-group" style="display: flex; gap: 10px;">
-                    <div style="flex:1;"><label>Yapım</label><input type="text" id="fYapimUlke" class="form-control" placeholder="Türkiye"></div>
+                    <div style="flex:1;"><label>Yapım (Ülke / Firma)</label><input type="text" id="fYapimUlke" class="form-control" placeholder="Türkiye / 0-NOKTA FİLM"></div>
                     <div style="flex:1;"><label>Görüntü Yönetmeni</label><input type="text" id="fGoruntu" class="form-control"></div>
                 </div>
                 <div class="form-group" style="display: flex; gap: 10px;">
@@ -558,6 +558,8 @@
                 openEditModal(index);
             };
 
+            const yapimBilgisi = film.yapim ? film.yapim : 'Türkiye';
+
             document.getElementById('detailContent').innerHTML = `
                 <div class="detail-header">
                     <img src="${film.afis}" class="detail-poster" alt="${film.ad}">
@@ -567,8 +569,10 @@
                         <div class="badge-row">
                             <span class="badge">📅 ${film.yil}</span>
                             <span class="badge">⏳ ${film.sure}</span>
+                        </div>
+                        <div class="badge-row">
                             <span class="badge">🎬 ${film.tur}</span>
-                            <span class="badge">🌍 ${film.yapim}</span>
+                            <span class="badge">🌍 ${yapimBilgisi}</span>
                         </div>
                         <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; margin-bottom: 8px;"><b>Konu:</b> ${film.konu}</p>
                         <p style="color: var(--text-muted); font-size: 0.8rem;"><b>Tema:</b> ${film.tema}</p>
@@ -588,6 +592,7 @@
                         <div class="crew-item"><span>Yönetmen</span><b>${film.yonetmen}</b></div>
                         <div class="crew-item"><span>Senarist</span><b>${film.senarist}</b></div>
                         <div class="crew-item"><span>Yapımcı</span><b>${film.yapimci}</b></div>
+                        <div class="crew-item"><span>Yapım</span><b>${yapimBilgisi}</b></div>
                         <div class="crew-item"><span>Yapım Şirketi</span><b>${film.yapimSirketi}</b></div>
                         <div class="crew-item"><span>Görüntü Yönetmeni</span><b>${film.goruntu}</b></div>
                         <div class="crew-item"><span>Kurgu</span><b>${film.kurgu}</b></div>
