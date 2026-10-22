@@ -462,6 +462,10 @@
                     <div style="flex:1;"><label>Kurgu</label><input type="text" id="fKurgu" class="form-control"></div>
                 </div>
                 <div class="form-group">
+                    <label>Web Sitesi</label>
+                    <input type="text" id="fWebSite" class="form-control" placeholder="zamanperdesifilm.com.tr">
+                </div>
+                <div class="form-group">
                     <label>Oyuncular</label>
                     <input type="text" id="fOyuncular" class="form-control" placeholder="Kuzeyfe Kalafat, Turan Gümüş...">
                 </div>
@@ -539,6 +543,7 @@
                     yapimSirketi: document.getElementById('fYapimSirketi').value,
                     yapim: document.getElementById('fYapim').value,
                     ulke: document.getElementById('fUlke').value,
+                    website: document.getElementById('fWebSite').value,
                     goruntu: document.getElementById('fGoruntu').value,
                     kurgu: document.getElementById('fKurgu').value,
                     oyuncular: document.getElementById('fOyuncular').value,
@@ -586,8 +591,10 @@
                 openEditModal(index);
             };
 
-            const ulkeBilgisi = film.ulke ? film.ulke : (film.yapim && !film.yapim.includes('FİLM') ? film.yapim : 'Türkiye');
+            const ulkeBilgisi = film.ulke ? film.ulke : 'Türkiye';
             const yapimBilgisi = film.yapim ? film.yapim : '0-NOKTA FİLM';
+            const webAdresi = film.website ? film.website : 'zamanperdesifilm.com.tr';
+            const webUrl = webAdresi.startsWith('http') ? webAdresi : 'https://' + webAdresi;
 
             document.getElementById('detailContent').innerHTML = `
                 <div class="detail-header">
@@ -602,7 +609,7 @@
                         <div class="badge-row">
                             <span class="badge">🎬 ${film.tur}</span>
                             <span class="badge">🌍 ${ulkeBilgisi}</span>
-                            <a href="https://zamanperdesifilm.com.tr" target="_blank" class="badge link-badge">🌐 zamanperdesifilm.com.tr</a>
+                            <a href="${webUrl}" target="_blank" class="badge link-badge">🌐 ${webAdresi}</a>
                         </div>
                         <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; margin-bottom: 8px;"><b>Konu:</b> ${film.konu}</p>
                         <p style="color: var(--text-muted); font-size: 0.8rem;"><b>Tema:</b> ${film.tema}</p>
@@ -627,7 +634,7 @@
                         <div class="crew-item"><span>Ülke</span><b>${ulkeBilgisi}</b></div>
                         <div class="crew-item"><span>Görüntü Yönetmeni</span><b>${film.goruntu}</b></div>
                         <div class="crew-item"><span>Kurgu</span><b>${film.kurgu}</b></div>
-                        <div class="crew-item"><span>Resmi Web Sitesi</span><b><a href="https://zamanperdesifilm.com.tr" target="_blank">zamanperdesifilm.com.tr</a></b></div>
+                        <div class="crew-item"><span>Web Sitesi</span><b><a href="${webUrl}" target="_blank">${webAdresi}</a></b></div>
                         <div class="crew-item" style="grid-column: span 2;"><span>Oyuncular</span><b>${film.oyuncular}</b></div>
                     </div>
                 </div>
@@ -657,6 +664,7 @@
             document.getElementById('fYapimSirketi').value = film.yapimSirketi || '';
             document.getElementById('fYapim').value = film.yapim || '';
             document.getElementById('fUlke').value = film.ulke || '';
+            document.getElementById('fWebSite').value = film.website || '';
             document.getElementById('fGoruntu').value = film.goruntu || '';
             document.getElementById('fKurgu').value = film.kurgu || '';
             document.getElementById('fOyuncular').value = film.oyuncular || '';
