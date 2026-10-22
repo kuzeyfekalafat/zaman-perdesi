@@ -264,6 +264,11 @@
             font-size: 0.9rem;
         }
 
+        .admin-action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
         .edit-btn {
             background-color: #1f293d;
             color: white;
@@ -277,6 +282,21 @@
 
         .edit-btn:hover {
             border-color: var(--accent-color);
+        }
+
+        .delete-btn {
+            background-color: #7f1d1d;
+            color: white;
+            border: 1px solid #991b1b;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .delete-btn:hover {
+            background-color: var(--accent-color);
         }
 
         .detail-header {
@@ -460,7 +480,10 @@
         <div id="detailView" class="detail-container">
             <div class="nav-bar">
                 <span class="back-link" onclick="goHome()">&larr; Arşive Geri Dön</span>
-                <button class="edit-btn" id="editProjectBtn" style="display:none;" onclick="openEditModalFromDetail()">✏️ Projeyi Düzenle</button>
+                <div class="admin-action-btns" id="adminActionBtns" style="display:none;">
+                    <button class="edit-btn" onclick="openEditModalFromDetail()">✏️ Düzenle</button>
+                    <button class="delete-btn" onclick="deleteCurrentProject()">🗑️ Projeyi Sil</button>
+                </div>
             </div>
             <div id="detailContent"></div>
         </div>
@@ -600,7 +623,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, getDoc, setDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, setDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBqhatIKXnwZu67OS14BdWofFt6yNnWFP0",
@@ -629,21 +652,21 @@
             const userBtn = document.getElementById('userAuthBtn');
             const adminBtn = document.getElementById('mainAdminBtn');
             const logoutBtn = document.getElementById('adminLogoutBtn');
-            const editBtn = document.getElementById('editProjectBtn');
+            const adminActionBtns = document.getElementById('adminActionBtns');
             
             if (user) {
                 if (user.email === ADMIN_EMAIL) {
                     userBtn.style.display = 'none';
                     adminBtn.style.display = 'block';
-                    adminBtn.innerText = "+ Film Ekle"; // Admin giriş yapınca buton adı Film Ekle olsun
+                    adminBtn.innerText = "+ Film Ekle";
                     logoutBtn.style.display = 'block';
-                    if (activeDetailIndex !== -1) editBtn.style.display = 'block';
+                    if (activeDetailIndex !== -1) adminActionBtns.style.display = 'flex';
                 } else {
                     userBtn.style.display = 'block';
                     userBtn.innerText = `👤 ${user.email.split('@')[0]} (Çıkış)`;
                     adminBtn.style.display = 'none';
                     logoutBtn.style.display = 'none';
-                    editBtn.style.display = 'none';
+                    adminActionBtns.style.display = 'none';
                 }
 
                 await fetchUserFavorites();
@@ -652,9 +675,9 @@
                 userBtn.style.display = 'block';
                 userBtn.innerText = "👤 Üye Girişi";
                 adminBtn.style.display = 'block';
-                adminBtn.innerText = "🔒 Admin Girişi"; // Çıkış yapınca tekrar Admin Girişi yazsın
+                adminBtn.innerText = "🔒 Admin Girişi";
                 logoutBtn.style.display = 'none';
-                editBtn.style.display = 'none';
+                adminActionBtns.style.display = 'none';
                 userFavorites = [];
                 if (activeDetailIndex !== -1) showDetail(activeDetailIndex);
             }
@@ -708,17 +731,14 @@
             }
         }
 
-        // Admin Butonu İşleyicisi
         window.handleAdminClick = function() {
             if (currentUser && currentUser.email === ADMIN_EMAIL) {
-                // Admin zaten içerideyse doğrudan film ekleme modalını aç
                 document.getElementById('editDocId').value = "";
                 document.getElementById('modalTitle').innerText = "Yeni Film / Senaryo Ekle";
                 document.getElementById('submitBtnText').innerText = "Filmi / Senaryoyu Kaydet";
                 document.getElementById('filmForm').reset();
                 document.getElementById('adminModal').style.display = 'flex';
             } else {
-                // Dışarıdan biri basarsa admin giriş modalını aç
                 document.getElementById('adminLoginModal').style.display = 'flex';
             }
         }
@@ -885,7 +905,7 @@
             document.getElementById('detailView').style.display = 'block';
 
             if (currentUser && currentUser.email === ADMIN_EMAIL) {
-                document.getElementById('editProjectBtn').style.display = 'block';
+                document.getElementById('adminActionBtns').style.display = 'flex';
             }
 
             const ulkeBilgisi = film.ulke ? film.ulke : 'Türkiye';
@@ -1002,6 +1022,21 @@
             document.getElementById('fAfisDosya').value = '';
 
             document.getElementById('adminModal').style.display = 'flex';
+        }
+
+        window.deleteCurrentProject = async function() {
+            if (activeDetailIndex === -1 || !currentUser || currentUser.email !== ADMIN_EMAIL) return;
+            const film = filmlerListesi[activeDetailIndex];
+            
+            if (confirm(`"${film.ad}" adlı projeyi silmek istediğinize emin misiniz?`)) {
+                try {
+                    await deleteDoc(doc(db, "films", film.id));
+                    alert("Proje başarıyla silindi!");
+                    goHome();
+                } catch (err) {
+                    alert("Silme hatası: " + err.message);
+                }
+            }
         }
 
         window.saveFilmToFirebase = async function(e) {
