@@ -54,7 +54,7 @@
 
         .header-btns {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             align-items: center;
         }
 
@@ -82,6 +82,17 @@
 
         .user-btn:hover {
             border-color: var(--accent-color);
+        }
+
+        .logout-btn {
+            background-color: #374151;
+            color: white;
+            border: none;
+            padding: 7px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
         }
 
         main {
@@ -435,7 +446,8 @@
         <h1>Zaman Perdesi <span>Film</span></h1>
         <div class="header-btns" id="headerBtnsContainer">
             <button class="user-btn" id="userAuthBtn" onclick="handleUserAuthClick()">👤 Üye Girişi</button>
-            <button class="admin-btn" id="mainAdminBtn" onclick="handleAdminClick()">🔒 Admin Girişi</button>
+            <button class="admin-btn" id="mainAdminBtn" onclick="handleAdminClick()" style="display:none;">+ Film Ekle</button>
+            <button class="logout-btn" id="adminLogoutBtn" onclick="handleAdminLogout()" style="display:none;">Çıkış</button>
         </div>
     </header>
 
@@ -616,16 +628,20 @@
             currentUser = user;
             const userBtn = document.getElementById('userAuthBtn');
             const adminBtn = document.getElementById('mainAdminBtn');
+            const logoutBtn = document.getElementById('adminLogoutBtn');
             const editBtn = document.getElementById('editProjectBtn');
             
             if (user) {
                 if (user.email === ADMIN_EMAIL) {
-                    userBtn.style.display = 'none'; // Admin iken üye giriş butonunu gizle
-                    adminBtn.innerText = "+ Film Ekle (Çıkış)";
+                    userBtn.style.display = 'none';
+                    adminBtn.style.display = 'block';
+                    logoutBtn.style.display = 'block';
                     if (activeDetailIndex !== -1) editBtn.style.display = 'block';
                 } else {
+                    userBtn.style.display = 'block';
                     userBtn.innerText = `👤 ${user.email.split('@')[0]} (Çıkış)`;
-                    adminBtn.innerText = "🔒 Admin Girişi";
+                    adminBtn.style.display = 'none';
+                    logoutBtn.style.display = 'none';
                     editBtn.style.display = 'none';
                 }
 
@@ -634,7 +650,9 @@
             } else {
                 userBtn.style.display = 'block';
                 userBtn.innerText = "👤 Üye Girişi";
+                adminBtn.style.display = 'block'; // Giriş yapmamışsa admin giriş butonu görünsün
                 adminBtn.innerText = "🔒 Admin Girişi";
+                logoutBtn.style.display = 'none';
                 editBtn.style.display = 'none';
                 userFavorites = [];
                 if (activeDetailIndex !== -1) showDetail(activeDetailIndex);
@@ -692,11 +710,21 @@
         // Admin Butonu İşleyicisi
         window.handleAdminClick = function() {
             if (currentUser && currentUser.email === ADMIN_EMAIL) {
-                if (confirm("Admin oturumunu kapatmak istiyor musunuz?")) {
-                    signOut(auth).then(() => alert("Admin çıkışı yapıldı."));
-                }
+                // Admin zaten içerideyse doğrudan film ekleme modalını aç
+                document.getElementById('editDocId').value = "";
+                document.getElementById('modalTitle').innerText = "Yeni Film / Senaryo Ekle";
+                document.getElementById('submitBtnText').innerText = "Filmi / Senaryoyu Kaydet";
+                document.getElementById('filmForm').reset();
+                document.getElementById('adminModal').style.display = 'flex';
             } else {
+                // Dışarıdan biri basarsa admin giriş modalını aç
                 document.getElementById('adminLoginModal').style.display = 'flex';
+            }
+        }
+
+        window.handleAdminLogout = function() {
+            if (confirm("Admin oturumunu kapatmak istiyor musunuz?")) {
+                signOut(auth).then(() => alert("Admin çıkışı yapıldı."));
             }
         }
 
@@ -716,13 +744,6 @@
                 }
                 closeAdminLoginModal();
                 alert("Admin girişi başarılı!");
-                
-                // Eğer detay sayfasındaysa film ekleme modalını aç veya ana sayfada film ekleme modalını hazırla
-                document.getElementById('editDocId').value = "";
-                document.getElementById('modalTitle').innerText = "Yeni Film / Senaryo Ekle";
-                document.getElementById('submitBtnText').innerText = "Filmi / Senaryoyu Kaydet";
-                document.getElementById('filmForm').reset();
-                document.getElementById('adminModal').style.display = 'flex';
             } catch (error) {
                 alert("Admin giriş hatası: " + error.message);
             }
