@@ -446,7 +446,7 @@
         <h1>Zaman Perdesi <span>Film</span></h1>
         <div class="header-btns" id="headerBtnsContainer">
             <button class="user-btn" id="userAuthBtn" onclick="handleUserAuthClick()">👤 Üye Girişi</button>
-            <button class="admin-btn" id="mainAdminBtn" onclick="handleAdminClick()" style="display:none;">+ Film Ekle</button>
+            <button class="admin-btn" id="mainAdminBtn" onclick="handleAdminClick()">🔒 Admin Girişi</button>
             <button class="logout-btn" id="adminLogoutBtn" onclick="handleAdminLogout()" style="display:none;">Çıkış</button>
         </div>
     </header>
@@ -635,6 +635,7 @@
                 if (user.email === ADMIN_EMAIL) {
                     userBtn.style.display = 'none';
                     adminBtn.style.display = 'block';
+                    adminBtn.innerText = "+ Film Ekle"; // Admin giriş yapınca buton adı Film Ekle olsun
                     logoutBtn.style.display = 'block';
                     if (activeDetailIndex !== -1) editBtn.style.display = 'block';
                 } else {
@@ -650,8 +651,8 @@
             } else {
                 userBtn.style.display = 'block';
                 userBtn.innerText = "👤 Üye Girişi";
-                adminBtn.style.display = 'block'; // Giriş yapmamışsa admin giriş butonu görünsün
-                adminBtn.innerText = "🔒 Admin Girişi";
+                adminBtn.style.display = 'block';
+                adminBtn.innerText = "🔒 Admin Girişi"; // Çıkış yapınca tekrar Admin Girişi yazsın
                 logoutBtn.style.display = 'none';
                 editBtn.style.display = 'none';
                 userFavorites = [];
