@@ -218,13 +218,33 @@
             display: none;
         }
 
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
         .back-link {
             color: var(--accent-color);
             cursor: pointer;
-            display: inline-block;
-            margin-bottom: 15px;
             font-weight: 600;
             font-size: 0.9rem;
+        }
+
+        .edit-btn {
+            background-color: #1f293d;
+            color: white;
+            border: 1px solid var(--border-color);
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .edit-btn:hover {
+            border-color: var(--accent-color);
         }
 
         .detail-header {
@@ -331,7 +351,7 @@
 
     <header>
         <h1>Zaman Perdesi <span>Film</span></h1>
-        <button class="admin-btn" onclick="openModal()">+ Film Ekle</button>
+        <button class="admin-btn" onclick="openModalForAdd()">+ Film Ekle</button>
     </header>
 
     <main>
@@ -341,7 +361,10 @@
         </div>
 
         <div id="detailView" class="detail-container">
-            <span class="back-link" onclick="goHome()">&larr; Arşive Geri Dön</span>
+            <div class="nav-bar">
+                <span class="back-link" onclick="goHome()">&larr; Arşive Geri Dön</span>
+                <button class="edit-btn" id="editProjectBtn">✏️ Projeyi Düzenle</button>
+            </div>
             <div id="detailContent"></div>
         </div>
     </main>
@@ -349,9 +372,10 @@
     <div class="modal" id="adminModal">
         <div class="modal-content">
             <button class="close-btn" onclick="closeModal()">&times;</button>
-            <h2 style="margin-bottom: 15px; font-size: 1.2rem;">Yeni Film / Senaryo Ekle</h2>
+            <h2 id="modalTitle" style="margin-bottom: 15px; font-size: 1.2rem;">Yeni Film / Senaryo Ekle</h2>
             
             <form id="filmForm" onsubmit="saveFilm(event)">
+                <input type="hidden" id="editIndex" value="-1">
                 <div class="form-group">
                     <label>Film / Senaryo Adı</label>
                     <input type="text" id="fAd" class="form-control" required>
@@ -416,11 +440,11 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Film Afişi Seç (Dikey / Dikdörtgen)</label>
-                    <input type="file" id="fAfisDosya" class="form-control" accept="image/*" required>
+                    <label>Film Afişi Seç (Değiştirmek istemiyorsanız boş bırakabilirsiniz)</label>
+                    <input type="file" id="fAfisDosya" class="form-control" accept="image/*">
                 </div>
 
-                <button type="submit" class="submit-btn">Filmi / Senaryoyu Kaydet</button>
+                <button type="submit" class="submit-btn" id="submitBtnText">Filmi / Senaryoyu Kaydet</button>
             </form>
         </div>
     </div>
@@ -431,6 +455,7 @@
 
     <script>
         let filmler = JSON.parse(localStorage.getItem('zamanPerdesiFilmler')) || [];
+        let currentDetailIndex = -1;
 
         function renderGrid() {
             const grid = document.getElementById('filmGrid');
@@ -454,52 +479,84 @@
             });
         }
 
-        function openModal() { document.getElementById('adminModal').style.display = 'flex'; }
+        function openModalForAdd() {
+            document.getElementById('editIndex').value = -1;
+            document.getElementById('modalTitle').innerText = "Yeni Film / Senaryo Ekle";
+            document.getElementById('submitBtnText').innerText = "Filmi / Senaryoyu Kaydet";
+            document.getElementById('filmForm').reset();
+            document.getElementById('adminModal').style.display = 'flex';
+        }
+
         function closeModal() { document.getElementById('adminModal').style.display = 'none'; }
 
         function saveFilm(e) {
             e.preventDefault();
+            const editIndex = parseInt(document.getElementById('editIndex').value);
             const dosyaInput = document.getElementById('fAfisDosya');
             
+            function processSave(afisUrl) {
+                const yeniFilm = {
+                    ad: document.getElementById('fAd').value,
+                    slogan: document.getElementById('fSlogan').value,
+                    tur: document.getElementById('fTur').value,
+                    yil: document.getElementById('fYil').value,
+                    sure: document.getElementById('fSure').value,
+                    konu: document.getElementById('fKonu').value,
+                    tema: document.getElementById('fTema').value,
+                    perde1: document.getElementById('fPerde1').value,
+                    perde2: document.getElementById('fPerde2').value,
+                    perde3: document.getElementById('fPerde3').value,
+                    yonetmen: document.getElementById('fYonetmen').value,
+                    senarist: document.getElementById('fSenarist').value,
+                    yapimci: document.getElementById('fYapimci').value,
+                    yapimSirketi: document.getElementById('fYapimSirketi').value,
+                    yapim: document.getElementById('fYapimUlke').value,
+                    goruntu: document.getElementById('fGoruntu').value,
+                    kurgu: document.getElementById('fKurgu').value,
+                    oyuncular: document.getElementById('fOyuncular').value,
+                    afis: afisUrl
+                };
+
+                if (editIndex === -1) {
+                    filmler.push(yeniFilm);
+                } else {
+                    filmler[editIndex] = yeniFilm;
+                }
+
+                localStorage.setItem('zamanPerdesiFilmler', JSON.stringify(filmler));
+                closeModal();
+                document.getElementById('filmForm').reset();
+                renderGrid();
+
+                if (editIndex !== -1) {
+                    showDetail(editIndex);
+                }
+            }
+
             if (dosyaInput.files && dosyaInput.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(uploadEvent) {
-                    const yeniFilm = {
-                        ad: document.getElementById('fAd').value,
-                        slogan: document.getElementById('fSlogan').value,
-                        tur: document.getElementById('fTur').value,
-                        yil: document.getElementById('fYil').value,
-                        sure: document.getElementById('fSure').value,
-                        konu: document.getElementById('fKonu').value,
-                        tema: document.getElementById('fTema').value,
-                        perde1: document.getElementById('fPerde1').value,
-                        perde2: document.getElementById('fPerde2').value,
-                        perde3: document.getElementById('fPerde3').value,
-                        yonetmen: document.getElementById('fYonetmen').value,
-                        senarist: document.getElementById('fSenarist').value,
-                        yapimci: document.getElementById('fYapimci').value,
-                        yapimSirketi: document.getElementById('fYapimSirketi').value,
-                        yapim: document.getElementById('fYapimUlke').value,
-                        goruntu: document.getElementById('fGoruntu').value,
-                        kurgu: document.getElementById('fKurgu').value,
-                        oyuncular: document.getElementById('fOyuncular').value,
-                        afis: uploadEvent.target.result
-                    };
-
-                    filmler.push(yeniFilm);
-                    localStorage.setItem('zamanPerdesiFilmler', JSON.stringify(filmler));
-                    closeModal();
-                    document.getElementById('filmForm').reset();
-                    renderGrid();
+                    processSave(uploadEvent.target.result);
                 };
                 reader.readAsDataURL(dosyaInput.files[0]);
+            } else {
+                if (editIndex !== -1) {
+                    processSave(filmler[editIndex].afis);
+                } else {
+                    alert('Lütfen bir afiş seçin.');
+                }
             }
         }
 
         function showDetail(index) {
+            currentDetailIndex = index;
             const film = filmler[index];
             document.getElementById('homeView').style.display = 'none';
             document.getElementById('detailView').style.display = 'block';
+
+            document.getElementById('editProjectBtn').onclick = function() {
+                openEditModal(index);
+            };
 
             document.getElementById('detailContent').innerHTML = `
                 <div class="detail-header">
@@ -541,9 +598,39 @@
             window.scrollTo(0,0);
         }
 
+        function openEditModal(index) {
+            const film = filmler[index];
+            document.getElementById('editIndex').value = index;
+            document.getElementById('modalTitle').innerText = "Projeyi Düzenle";
+            document.getElementById('submitBtnText').innerText = "Değişiklikleri Güncelle";
+
+            document.getElementById('fAd').value = film.ad || '';
+            document.getElementById('fSlogan').value = film.slogan || '';
+            document.getElementById('fTur').value = film.tur || '';
+            document.getElementById('fYil').value = film.yil || '';
+            document.getElementById('fSure').value = film.sure || '';
+            document.getElementById('fKonu').value = film.konu || '';
+            document.getElementById('fTema').value = film.tema || '';
+            document.getElementById('fPerde1').value = film.perde1 || '';
+            document.getElementById('fPerde2').value = film.perde2 || '';
+            document.getElementById('fPerde3').value = film.perde3 || '';
+            document.getElementById('fYonetmen').value = film.yonetmen || '';
+            document.getElementById('fSenarist').value = film.senarist || '';
+            document.getElementById('fYapimci').value = film.yapimci || '';
+            document.getElementById('fYapimSirketi').value = film.yapimSirketi || '';
+            document.getElementById('fYapimUlke').value = film.yapim || '';
+            document.getElementById('fGoruntu').value = film.goruntu || '';
+            document.getElementById('fKurgu').value = film.kurgu || '';
+            document.getElementById('fOyuncular').value = film.oyuncular || '';
+            document.getElementById('fAfisDosya').value = '';
+
+            document.getElementById('adminModal').style.display = 'flex';
+        }
+
         function goHome() {
             document.getElementById('detailView').style.display = 'none';
             document.getElementById('homeView').style.display = 'block';
+            renderGrid();
         }
 
         renderGrid();
