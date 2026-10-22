@@ -300,6 +300,18 @@
             padding: 4px 10px;
             border-radius: 6px;
             font-size: 0.8rem;
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        .badge.link-badge {
+            border: 1px solid var(--border-color);
+            transition: border-color 0.2s;
+        }
+
+        .badge.link-badge:hover {
+            border-color: var(--accent-color);
+            color: white;
         }
 
         .section-box {
@@ -330,6 +342,11 @@
             font-size: 0.7rem;
         }
 
+        .crew-item a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
         .empty-msg {
             text-align: center;
             color: var(--text-muted);
@@ -344,6 +361,12 @@
             color: var(--text-muted);
             font-size: 0.75rem;
             background: rgba(11, 15, 25, 0.95);
+        }
+
+        footer a {
+            color: var(--text-main);
+            text-decoration: none;
+            font-weight: 600;
         }
     </style>
 </head>
@@ -454,7 +477,7 @@
     </div>
 
     <footer>
-        <p>&copy; 2026 Zaman Perdesi Film. Tüm hakları saklıdır.</p>
+        <p>&copy; 2026 <a href="https://zamanperdesifilm.com.tr" target="_blank">zamanperdesifilm.com.tr</a>. Tüm hakları saklıdır.</p>
     </footer>
 
     <script>
@@ -579,6 +602,7 @@
                         <div class="badge-row">
                             <span class="badge">🎬 ${film.tur}</span>
                             <span class="badge">🌍 ${ulkeBilgisi}</span>
+                            <a href="https://zamanperdesifilm.com.tr" target="_blank" class="badge link-badge">🌐 zamanperdesifilm.com.tr</a>
                         </div>
                         <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; margin-bottom: 8px;"><b>Konu:</b> ${film.konu}</p>
                         <p style="color: var(--text-muted); font-size: 0.8rem;"><b>Tema:</b> ${film.tema}</p>
@@ -603,6 +627,7 @@
                         <div class="crew-item"><span>Ülke</span><b>${ulkeBilgisi}</b></div>
                         <div class="crew-item"><span>Görüntü Yönetmeni</span><b>${film.goruntu}</b></div>
                         <div class="crew-item"><span>Kurgu</span><b>${film.kurgu}</b></div>
+                        <div class="crew-item"><span>Resmi Web Sitesi</span><b><a href="https://zamanperdesifilm.com.tr" target="_blank">zamanperdesifilm.com.tr</a></b></div>
                         <div class="crew-item" style="grid-column: span 2;"><span>Oyuncular</span><b>${film.oyuncular}</b></div>
                     </div>
                 </div>
