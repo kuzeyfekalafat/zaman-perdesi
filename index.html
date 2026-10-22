@@ -102,14 +102,14 @@
 
         .film-poster {
             width: 100%;
-            height: 220px;
+            height: 170px;
             object-fit: cover;
             background-color: #1a233a;
         }
 
         @media (min-width: 600px) {
             .film-poster {
-                height: 280px;
+                height: 220px;
             }
         }
 
@@ -122,7 +122,7 @@
         }
 
         .film-card-info h3 {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             margin-bottom: 4px;
             white-space: nowrap;
             overflow: hidden;
@@ -131,7 +131,10 @@
 
         .film-card-info p {
             color: var(--text-muted);
-            font-size: 0.75rem;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .modal {
@@ -505,10 +508,10 @@
                         <h2 class="detail-title">${film.ad}</h2>
                         <div class="detail-slogan">"${film.slogan}"</div>
                         <div class="badge-row">
-                            <span class="badge">&U125; ${film.yil}</span>
-                            <span class="badge">&amp; <b>${film.sure}</b></span>
-                            <span class="badge">&#127916; ${film.tur}</span>
-                            <span class="badge">&#127757; ${film.yapim}</span>
+                            <span class="badge">📅 ${film.yil}</span>
+                            <span class="badge">⏳ ${film.sure}</span>
+                            <span class="badge">🎬 ${film.tur}</span>
+                            <span class="badge">🌍 ${film.yapim}</span>
                         </div>
                         <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; margin-bottom: 8px;"><b>Konu:</b> ${film.konu}</p>
                         <p style="color: var(--text-muted); font-size: 0.8rem;"><b>Tema:</b> ${film.tema}</p>
