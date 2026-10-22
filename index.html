@@ -52,6 +52,12 @@
             color: var(--accent-color);
         }
 
+        .header-btns {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
         .admin-btn {
             background-color: var(--accent-color);
             color: white;
@@ -61,6 +67,21 @@
             cursor: pointer;
             font-weight: bold;
             font-size: 0.8rem;
+        }
+
+        .user-btn {
+            background-color: #1f293d;
+            color: white;
+            border: 1px solid var(--border-color);
+            padding: 7px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .user-btn:hover {
+            border-color: var(--accent-color);
         }
 
         main {
@@ -314,6 +335,28 @@
             color: white;
         }
 
+        .action-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .fav-btn {
+            background: #1f293d;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .fav-btn.favorited {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
         .section-box {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -347,6 +390,22 @@
             text-decoration: none;
         }
 
+        .comment-box {
+            background: #0b0f19;
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .comment-box span {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            display: block;
+            margin-bottom: 4px;
+        }
+
         .empty-msg {
             text-align: center;
             color: var(--text-muted);
@@ -374,8 +433,11 @@
 
     <header>
         <h1>Zaman Perdesi <span>Film</span></h1>
-        <!-- Admin Giriş Butonu -->
-        <button class="admin-btn" id="mainAdminBtn" onclick="handleAdminClick()">🔒 Admin Girişi</button>
+        <div class="header-btns" id="headerBtnsContainer">
+            <!-- Dinamik Giriş/Admin Butonları -->
+            <button class="user-btn" id="userAuthBtn" onclick="handleUserAuthClick()">👤 Üye Girişi</button>
+            <button class="admin-btn" id="mainAdminBtn" onclick="handleAdminClick()" style="display:none;">🔒 Admin Girişi</button>
+        </div>
     </header>
 
     <main>
@@ -393,24 +455,27 @@
         </div>
     </main>
 
-    <!-- Giriş Modalı -->
-    <div class="modal" id="loginModal">
+    <!-- Üye Giriş / Kayıt Modalı -->
+    <div class="modal" id="userAuthModal">
         <div class="modal-content" style="max-width: 400px;">
-            <button class="close-btn" onclick="closeLoginModal()">&times;</button>
-            <h2 style="margin-bottom: 15px; font-size: 1.2rem; color: var(--accent-color);">Admin Girişi</h2>
+            <button class="close-btn" onclick="closeUserAuthModal()">&times;</button>
+            <h2 id="authModalTitle" style="margin-bottom: 15px; font-size: 1.2rem; color: var(--accent-color);">Üye Girişi</h2>
             <div class="form-group">
                 <label>E-posta</label>
-                <input type="email" id="adminEmail" class="form-control" placeholder="admin@zamanperdesifilm.com.tr">
+                <input type="email" id="authEmail" class="form-control" placeholder="ornek@email.com">
             </div>
             <div class="form-group">
                 <label>Şifre</label>
-                <input type="password" id="adminPassword" class="form-control" placeholder="••••••••">
+                <input type="password" id="authPassword" class="form-control" placeholder="••••••••">
             </div>
-            <button type="button" class="submit-btn" onclick="loginAdmin()">Giriş Yap</button>
+            <button type="button" class="submit-btn" id="authSubmitBtn" onclick="submitUserAuth()">Giriş Yap</button>
+            <p style="text-align: center; margin-top: 12px; font-size: 0.8rem; color: var(--text-muted);">
+                Hesabın yok mu? <span id="authSwitchText" style="color: var(--accent-color); cursor: pointer; font-weight: 600;" onclick="toggleAuthMode()">Kayıt Ol</span>
+            </p>
         </div>
     </div>
 
-    <!-- Film Ekleme / Düzenleme Modalı -->
+    <!-- Film Ekleme / Düzenleme Modalı (Sadece Admin) -->
     <div class="modal" id="adminModal">
         <div class="modal-content">
             <button class="close-btn" onclick="closeModal()">&times;</button>
@@ -506,10 +571,9 @@
     <!-- Firebase SDK Entegrasyonu -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, getDoc, setDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Firebase Gerçek Yapılandırma Bilgilerin (ZamanPerdesiFilm)
         const firebaseConfig = {
             apiKey: "AIzaSyBqhatIKXnwZu67OS14BdWofFt6yNnWFP0",
             authDomain: "zamanperdesifilm-db723.firebaseapp.com",
@@ -523,61 +587,212 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        const ADMIN_EMAIL = "kuzeyfe198634@gmail.com";
+
         let filmlerListesi = [];
         let currentUser = null;
         let activeDetailIndex = -1;
+        let isRegisterMode = false;
+        let userFavorites = [];
 
         // Oturum Durumu Takibi
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             currentUser = user;
-            const btn = document.getElementById('mainAdminBtn');
+            const userBtn = document.getElementById('userAuthBtn');
+            const adminBtn = document.getElementById('mainAdminBtn');
             const editBtn = document.getElementById('editProjectBtn');
             
             if (user) {
-                btn.innerText = "+ Film Ekle (Çıkış Yap)";
-                if(activeDetailIndex !== -1) editBtn.style.display = 'block';
+                userBtn.innerText = `👤 ${user.email.split('@')[0]} (Çıkış)`;
+                
+                // Admin kontrolü
+                if (user.email === ADMIN_EMAIL) {
+                    adminBtn.style.display = 'block';
+                    adminBtn.innerText = "+ Film Ekle";
+                } else {
+                    adminBtn.style.display = 'none';
+                }
+
+                // Favorileri çek
+                await fetchUserFavorites();
+                if (activeDetailIndex !== -1) {
+                    showDetail(activeDetailIndex);
+                    if(user.email === ADMIN_EMAIL) editBtn.style.display = 'block';
+                }
             } else {
-                btn.innerText = "🔒 Admin Girişi";
+                userBtn.innerText = "👤 Üye Girişi";
+                adminBtn.style.display = 'block';
+                adminBtn.innerText = "🔒 Admin Girişi";
                 editBtn.style.display = 'none';
+                userFavorites = [];
+                if (activeDetailIndex !== -1) showDetail(activeDetailIndex);
             }
         });
 
-        window.handleAdminClick = function() {
+        window.handleUserAuthClick = function() {
             if (currentUser) {
                 if (confirm("Çıkış yapmak istiyor musunuz?")) {
                     signOut(auth).then(() => alert("Çıkış yapıldı."));
                 }
             } else {
-                document.getElementById('loginModal').style.display = 'flex';
+                document.getElementById('userAuthModal').style.display = 'flex';
             }
         }
 
-        window.closeLoginModal = function() {
-            document.getElementById('loginModal').style.display = 'none';
+        window.closeUserAuthModal = function() {
+            document.getElementById('userAuthModal').style.display = 'none';
         }
 
-        window.loginAdmin = async function() {
-            const email = document.getElementById('adminEmail').value;
-            const password = document.getElementById('adminPassword').value;
+        window.toggleAuthMode = function() {
+            isRegisterMode = !isRegisterMode;
+            const title = document.getElementById('authModalTitle');
+            const btn = document.getElementById('authSubmitBtn');
+            const switchText = document.getElementById('authSwitchText');
+
+            if (isRegisterMode) {
+                title.innerText = "Üye Kayıt Ol";
+                btn.innerText = "Kayıt Ol";
+                switchText.innerText = "Giriş Yap";
+            } else {
+                title.innerText = "Üye Girişi";
+                btn.innerText = "Giriş Yap";
+                switchText.innerText = "Kayıt Ol";
+            }
+        }
+
+        window.submitUserAuth = async function() {
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
             try {
-                await signInWithEmailAndPassword(auth, email, password);
-                closeLoginModal();
-                alert("Admin girişi başarılı!");
+                if (isRegisterMode) {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                    alert("Kayıt başarılı ve giriş yapıldı!");
+                } else {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    alert("Giriş başarılı!");
+                }
+                closeUserAuthModal();
             } catch (error) {
-                alert("Giriş hatası: " + error.message);
+                alert("İşlem hatası: " + error.message);
             }
         }
 
-        // Filmleri Firestore'dan Çekme
+        window.handleAdminClick = function() {
+            if (currentUser && currentUser.email === ADMIN_EMAIL) {
+                document.getElementById('editDocId').value = "";
+                document.getElementById('modalTitle').innerText = "Yeni Film / Senaryo Ekle";
+                document.getElementById('submitBtnText').innerText = "Filmi / Senaryoyu Kaydet";
+                document.getElementById('filmForm').reset();
+                document.getElementById('adminModal').style.display = 'flex';
+            } else {
+                // Admin değilse normal üye giriş modalını aç veya admin şifresi iste
+                document.getElementById('userAuthModal').style.display = 'flex';
+            }
+        }
+
+        window.closeModal = function() { 
+            document.getElementById('adminModal').style.display = 'none'; 
+        }
+
+        async function fetchUserFavorites() {
+            if (!currentUser) return;
+            try {
+                const userDocRef = doc(db, "users", currentUser.uid);
+                const docSnap = await getDoc(userDocRef);
+                if (docSnap.exists()) {
+                    userFavorites = docSnap.data().favorites || [];
+                } else {
+                    userFavorites = [];
+                }
+            } catch (e) {
+                console.error("Favoriler yüklenemedi:", e);
+            }
+        }
+
+        window.toggleFavorite = async function(filmId) {
+            if (!currentUser) {
+                alert("Favorilere eklemek için lütfen giriş yapın!");
+                document.getElementById('userAuthModal').style.display = 'flex';
+                return;
+            }
+
+            const userDocRef = doc(db, "users", currentUser.uid);
+            try {
+                if (userFavorites.includes(filmId)) {
+                    await updateDoc(userDocRef, { favorites: arrayRemove(filmId) });
+                    userFavorites = userFavorites.filter(id => id !== filmId);
+                    alert("Favorilerden çıkarıldı.");
+                } else {
+                    await setDoc(userDocRef, { favorites: arrayUnion(filmId) }, { merge: true });
+                    userFavorites.push(filmId);
+                    alert("Favorilere eklendi! ❤️");
+                }
+                showDetail(activeDetailIndex);
+            } catch (err) {
+                // Doküman yoksa setDoc ile oluştur
+                await setDoc(userDocRef, { favorites: [filmId] }, { merge: true });
+                userFavorites.push(filmId);
+                alert("Favorilere eklendi! ❤️");
+                showDetail(activeDetailIndex);
+            }
+        }
+
+        window.addComment = async function(filmId) {
+            if (!currentUser) {
+                alert("Yorum yapabilmek için lütfen giriş yapın!");
+                document.getElementById('userAuthModal').style.display = 'flex';
+                return;
+            }
+
+            const commentText = document.getElementById('newCommentText').value.trim();
+            if (!commentText) {
+                alert("Lütfen bir yorum yazın.");
+                return;
+            }
+
+            const filmRef = doc(db, "films", filmId);
+            const newComment = {
+                user: currentUser.email,
+                text: commentText,
+                date: new Date().toLocaleDateString('tr-TR')
+            };
+
+            try {
+                await updateDoc(filmRef, {
+                    comments: arrayUnion(newComment)
+                });
+                alert("Yorumunuz eklendi!");
+                document.getElementById('newCommentText').value = '';
+                // Veriyi tazelemek için filmleri tekrar çek
+                await fetchFilmsWithoutRender();
+                showDetail(activeDetailIndex);
+            } catch (err) {
+                // Eğer filmde comments alanı yoksa setDoc ile güncelle
+                try {
+                    await updateDoc(filmRef, { comments: [newComment] });
+                    alert("Yorumunuz eklendi!");
+                    document.getElementById('newCommentText').value = '';
+                    await fetchFilmsWithoutRender();
+                    showDetail(activeDetailIndex);
+                } catch (e2) {
+                    alert("Yorum eklenirken hata oluştu: e2.message");
+                }
+            }
+        }
+
+        async function fetchFilmsWithoutRender() {
+            const querySnapshot = await getDocs(collection(db, "films"));
+            filmlerListesi = [];
+            querySnapshot.forEach((docSnap) => {
+                filmlerListesi.push({ id: docSnap.id, ...docSnap.data() });
+            });
+        }
+
         async function fetchFilms() {
             const grid = document.getElementById('filmGrid');
             grid.innerHTML = '<div class="empty-msg" style="grid-column: 1/-1;">Arşiv yükleniyor...</div>';
             try {
-                const querySnapshot = await getDocs(collection(db, "films"));
-                filmlerListesi = [];
-                querySnapshot.forEach((docSnap) => {
-                    filmlerListesi.push({ id: docSnap.id, ...docSnap.data() });
-                });
+                await fetchFilmsWithoutRender();
                 renderGrid();
             } catch (error) {
                 grid.innerHTML = `<div class="empty-msg" style="grid-column: 1/-1;">Veriler yüklenirken hata oluştu: ${error.message}</div>`;
@@ -612,7 +827,7 @@
             document.getElementById('homeView').style.display = 'none';
             document.getElementById('detailView').style.display = 'block';
 
-            if (currentUser) {
+            if (currentUser && currentUser.email === ADMIN_EMAIL) {
                 document.getElementById('editProjectBtn').style.display = 'block';
             }
 
@@ -620,6 +835,25 @@
             const yapimBilgisi = film.yapim ? film.yapim : '0-NOKTA FİLM';
             const webAdresi = film.website ? film.website : 'zamanperdesifilm.com.tr';
             const webUrl = webAdresi.startsWith('http') ? webAdresi : 'https://' + webAdresi;
+
+            const isFav = userFavorites.includes(film.id);
+            const favButtonText = isFav ? "❤️ Favorilerden Çıkar" : "🤍 Favorilere Ekle";
+            const favButtonClass = isFav ? "fav-btn favorited" : "fav-btn";
+
+            // Yorumları listele
+            let commentsHtml = '';
+            if (film.comments && film.comments.length > 0) {
+                film.comments.forEach(c => {
+                    commentsHtml += `
+                        <div class="comment-box">
+                            <span><b>${c.user}</b> &bull; ${c.date}</span>
+                            <p>${c.text}</p>
+                        </div>
+                    `;
+                });
+            } else {
+                commentsHtml = '<p style="color: var(--text-muted); font-size: 0.85rem;">Bu projeye henüz yorum yapılmamış. İlk yorumu sen yap!</p>';
+            }
 
             document.getElementById('detailContent').innerHTML = `
                 <div class="detail-header">
@@ -638,6 +872,10 @@
                         </div>
                         <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; margin-bottom: 8px;"><b>Konu:</b> ${film.konu || ''}</p>
                         <p style="color: var(--text-muted); font-size: 0.8rem;"><b>Tema:</b> ${film.tema || ''}</p>
+                        
+                        <div class="action-row">
+                            <button class="${favButtonClass}" onclick="toggleFavorite('${film.id}')">${favButtonText}</button>
+                        </div>
                     </div>
                 </div>
 
@@ -663,12 +901,23 @@
                         <div class="crew-item" style="grid-column: span 2;"><span>Oyuncular</span><b>${film.oyuncular || ''}</b></div>
                     </div>
                 </div>
+
+                <div class="section-box">
+                    <h3>Yorumlar ve Geri Bildirimler</h3>
+                    <div style="margin-bottom: 12px;">
+                        ${commentsHtml}
+                    </div>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <textarea id="newCommentText" class="form-control" placeholder="Film hakkında düşüncelerini paylaş..."></textarea>
+                        <button type="button" class="submit-btn" style="margin-top: 8px; padding: 7px;" onclick="addComment('${film.id}')">Yorum Yap</button>
+                    </div>
+                </div>
             `;
             window.scrollTo(0,0);
         }
 
         window.openEditModalFromDetail = function() {
-            if (activeDetailIndex === -1) return;
+            if (activeDetailIndex === -1 || !currentUser || currentUser.email !== ADMIN_EMAIL) return;
             const film = filmlerListesi[activeDetailIndex];
             document.getElementById('editDocId').value = film.id;
             document.getElementById('modalTitle').innerText = "Projeyi Düzenle";
@@ -699,26 +948,13 @@
             document.getElementById('adminModal').style.display = 'flex';
         }
 
-        // Ana Butondan Tetiklenen Ekleme Fonksiyonu
-        window.handleAdminClick = function() {
-            if (currentUser) {
-                // Eğer detay sayfasındayken veya ana sayfadayken film eklemek isterse
-                document.getElementById('editDocId').value = "";
-                document.getElementById('modalTitle').innerText = "Yeni Film / Senaryo Ekle";
-                document.getElementById('submitBtnText').innerText = "Filmi / Senaryoyu Kaydet";
-                document.getElementById('filmForm').reset();
-                document.getElementById('adminModal').style.display = 'flex';
-            } else {
-                document.getElementById('loginModal').style.display = 'flex';
-            }
-        }
-
-        window.closeModal = function() { 
-            document.getElementById('adminModal').style.display = 'none'; 
-        }
-
         window.saveFilmToFirebase = async function(e) {
             e.preventDefault();
+            if (!currentUser || currentUser.email !== ADMIN_EMAIL) {
+                alert("Bu işlem için yetkiniz yok!");
+                return;
+            }
+
             const docId = document.getElementById('editDocId').value;
             const dosyaInput = document.getElementById('fAfisDosya');
 
@@ -759,7 +995,6 @@
                     document.getElementById('filmForm').reset();
                     fetchFilms();
                     if(docId && activeDetailIndex !== -1) {
-                        // Güncellenen veriyi yansıtmak için detayı tazele
                         setTimeout(() => showDetail(activeDetailIndex), 500);
                     }
                 } catch (err) {
@@ -790,7 +1025,6 @@
             fetchFilms();
         }
 
-        // Sayfa açıldığında filmleri buluttan getir
         fetchFilms();
     </script>
 </body>
