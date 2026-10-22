@@ -3,195 +3,526 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zaman Perdesi | Küratörlü Müzik Platformu</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Zaman Perdesi Film | Senaryo ve Film Yönetim Paneli</title>
     <style>
-        body { background: #0f172a; color: #f8fafc; font-family: sans-serif; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: #1e293b; padding: 20px; border-radius: 12px; }
-        input, select, textarea, button { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: none; box-sizing: border-box; }
-        input, select, textarea { background: #334155; color: white; }
-        button { background: #10b981; color: white; font-weight: bold; cursor: pointer; }
-        button:hover { background: #059669; }
-        .song-card { background: #334155; padding: 12px; margin-top: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
-        audio { width: 100%; margin-top: 5px; }
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #131b2e;
+            --accent-color: #e50914;
+            --imdb-color: #f5c518;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: #1f293d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(11, 15, 25, 0.95);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        header h1 span {
+            color: var(--accent-color);
+        }
+
+        .admin-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        main {
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 25px 15px;
+            flex: 1;
+        }
+
+        .film-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        .film-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .film-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-color);
+        }
+
+        .film-poster {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+            background-color: #1a233a;
+        }
+
+        .film-card-info {
+            padding: 15px;
+        }
+
+        .film-card-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .film-card-info p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            max-width: 650px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 25px;
+            border-radius: 14px;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px; right: 20px;
+            background: none; border: none;
+            color: var(--text-muted); font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            background-color: #0b0f19;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        input[type="file"].form-control {
+            padding: 7px;
+            cursor: pointer;
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .submit-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .detail-container {
+            display: none;
+        }
+
+        .back-link {
+            color: var(--accent-color);
+            cursor: pointer;
+            display: inline-block;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .detail-header {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .detail-poster {
+            width: 220px;
+            height: 320px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .detail-meta-box {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .detail-title {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .detail-slogan {
+            color: var(--accent-color);
+            font-style: italic;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: #1f293d;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .section-box {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .section-box h3 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--accent-color);
+            padding-left: 8px;
+        }
+
+        .crew-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .crew-item span {
+            color: var(--text-muted);
+            display: block;
+            font-size: 0.75rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            background: rgba(11, 15, 25, 0.95);
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Zaman Perdesi</h1>
-        <p style="background:#1e293b; padding:12px; border-radius:8px; color:#f8fafc; font-size:14px; line-height:1.5; margin-bottom:15px;">Zaman Perdesi Music | Küratörlü Müzik Platformu ve Dijital Arşiv Projesi. Yaratıcısı: Kuzeyfe Kalafat.</p>
 
-        <div id="auth-section">
-            <h3>Giriş Yap / Üye Ol</h3>
-            <input type="email" id="email" placeholder="E-posta adresiniz">
-            <input type="password" id="password" placeholder="Şifreniz">
-            <button onclick="signUp()">Kayıt Ol</button>
-            <button onclick="signIn()">Giriş Yap</button>
+    <header>
+        <h1>Zaman Perdesi <span>Film</span></h1>
+        <button class="admin-btn" onclick="openModal()">+ Film / Senaryo Ekle</button>
+    </header>
+
+    <main>
+        <div id="homeView">
+            <h2 style="margin-bottom: 20px; font-size: 1.2rem; border-left: 4px solid var(--accent-color); padding-left: 10px;">Arşivdeki Projeler</h2>
+            <div class="film-grid" id="filmGrid"></div>
         </div>
 
-        <div id="app-section" style="display:none;">
-            <h3 id="user-info"></h3>
-            <button onclick="signOut()" style="background:#ef4444;">Çıkış Yap</button>
-            <hr>
-            <h3>Şarkı Yükle (Küratör Onaylı)</h3>
-            <input type="text" id="song-title" placeholder="Şarkı Adı">
+        <div id="detailView" class="detail-container">
+            <span class="back-link" onclick="goHome()">&larr; Arşive Geri Dön</span>
+            <div id="detailContent"></div>
+        </div>
+    </main>
+
+    <div class="modal" id="adminModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <h2 style="margin-bottom: 20px; font-size: 1.3rem;">Yeni Film / Senaryo Ekle</h2>
             
-            <select id="song-genre">
-                <option value="Tekli (Single)">Tekli (Single)</option>
-                <option value="Albüm Parçası">Albüm Parçası</option>
-                <option value="Ambient / Slow">Ambient / Slow</option>
-            </select>
+            <form id="filmForm" onsubmit="saveFilm(event)">
+                <div class="form-group">
+                    <label>Film / Senaryo Adı</label>
+                    <input type="text" id="fAd" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Slogan</label>
+                    <input type="text" id="fSlogan" class="form-control" placeholder="Örn: Zamanın ötesinde bir yolculuk...">
+                </div>
+                <div class="form-group" style="display: flex; gap: 10px;">
+                    <div style="flex:1;">
+                        <label>Tür</label>
+                        <input type="text" id="fTur" class="form-control" placeholder="Dram, Gerilim">
+                    </div>
+                    <div style="flex:1;">
+                        <label>Yapım Yılı</label>
+                        <input type="text" id="fYil" class="form-control" placeholder="2026">
+                    </div>
+                    <div style="flex:1;">
+                        <label>Süre</label>
+                        <input type="text" id="fSure" class="form-control" placeholder="120 dk">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Konu</label>
+                    <textarea id="fKonu" class="form-control" placeholder="Filmin genel konusu..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Tema</label>
+                    <input type="text" id="fTema" class="form-control" placeholder="Yalnızlık, Zaman, Adalet">
+                </div>
+                
+                <h3 style="font-size: 1rem; color: var(--accent-color); margin: 15px 0 10px 0;">3 Perde Uzun Akışı</h3>
+                <div class="form-group">
+                    <label>1. Perde (Serim / Giriş)</label>
+                    <textarea id="fPerde1" class="form-control"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>2. Perde (Gelişme / Düğüm)</label>
+                    <textarea id="fPerde2" class="form-control"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>3. Perde (Çözüm / Final)</label>
+                    <textarea id="fPerde3" class="form-control"></textarea>
+                </div>
 
-            <input type="text" id="song-album" placeholder="Albüm Adı (Varsa)">
-            
-            <label style="font-size: 13px; color: #94a3b8; display: block; margin-top: 5px;">MP3 / Ses Dosyası Seç (Cihazdan):</label>
-            <input type="file" id="song-file" accept="audio/*">
+                <h3 style="font-size: 1rem; color: var(--accent-color); margin: 15px 0 10px 0;">Künye Bilgileri</h3>
+                <div class="form-group" style="display: flex; gap: 10px;">
+                    <div style="flex:1;"><label>Yönetmen</label><input type="text" id="fYonetmen" class="form-control"></div>
+                    <div style="flex:1;"><label>Senarist</label><input type="text" id="fSenarist" class="form-control"></div>
+                </div>
+                <div class="form-group" style="display: flex; gap: 10px;">
+                    <div style="flex:1;"><label>Yapımcı</label><input type="text" id="fYapimci" class="form-control"></div>
+                    <div style="flex:1;"><label>Yapım Şirketi</label><input type="text" id="fYapimSirketi" class="form-control"></div>
+                </div>
+                <div class="form-group" style="display: flex; gap: 10px;">
+                    <div style="flex:1;"><label>Yapım</label><input type="text" id="fYapimUlke" class="form-control" placeholder="Türkiye"></div>
+                    <div style="flex:1;"><label>Görüntü Yönetmeni</label><input type="text" id="fGoruntu" class="form-control"></div>
+                </div>
+                <div class="form-group" style="display: flex; gap: 10px;">
+                    <div style="flex:1;"><label>Kurgu</label><input type="text" id="fKurgu" class="form-control"></div>
+                    <div style="flex:1;"><label>Oyuncular</label><input type="text" id="fOyuncular" class="form-control" placeholder="Ahmet, Zeynep..."></div>
+                </div>
 
-            <textarea id="song-lyrics" placeholder="Şarkı Sözleri / Künye / Yapım Bilgileri..." rows="3"></textarea>
+                <div class="form-group">
+                    <label>Film Afişi Seç (Galeriden / Dosyadan)</label>
+                    <input type="file" id="fAfisDosya" class="form-control" accept="image/*" required>
+                </div>
 
-            <button id="upload-btn" onclick="uploadSongBase64()">Şarkıyı Gönder</button>
-            <hr>
-            <h3>Yayınlanan Şarkılar</h3>
-            <div id="songs-list"></div>
+                <button type="submit" class="submit-btn">Filmi / Senaryoyu Kaydet</button>
+            </form>
         </div>
     </div>
 
+    <footer>
+        <p>&copy; 2026 Zaman Perdesi Film. Tüm hakları saklıdır.</p>
+    </footer>
+
     <script>
-        const SUPABASE_URL = 'https://zmumdwcagjqnqahehunx.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_IAnZrTYQWhG-hXrIGlR4pg__AZyUwV';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        async function signUp() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const { error } = await supabase.auth.signUp({ email, password });
-            if (error) alert(error.message);
-            else alert('Kayıt başarılı! E-postanızı kontrol edin veya giriş yapın.');
-        }
-
-        async function signIn() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) alert(error.message);
-            else checkUser();
-        }
-
-        async function signOut() {
-            await supabase.auth.signOut();
-            location.reload();
-        }
-
-        async function checkUser() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                document.getElementById('auth-section').style.display = 'none';
-                document.getElementById('app-section').style.display = 'block';
-                document.getElementById('user-info').innerText = 'Hoş geldin: ' + user.email;
-                loadSongs();
+        let filmler = JSON.parse(localStorage.getItem('zamanPerdesiFilmler')) || [
+            {
+                ad: "Kayıp Zamanın İzinde",
+                slogan: "Zaman bükülür, sırlar açığa çıkar.",
+                tur: "Dram / Gizem",
+                yil: "2026",
+                sure: "120 dk",
+                konu: "Geçmişin tozlu sayfaları arasında kaybolmuş bir adamın gerçeği arayış hikayesi.",
+                tema: "Zaman, Pişmanlık, Hafıza",
+                perde1: "Karakterin sıradan hayatı ve geçmişten gelen gizemli bir mektupla sarsılması.",
+                perde2: "İpuçlarının peşinden giderken karşılaştığı engeller ve artan gerilim.",
+                perde3: "Sırların çözüldüğü ve büyük yüzleşmenin gerçekleştiği final perdesi.",
+                yonetmen: "Kuzeyfe Kalafat",
+                senarist: "Kuzeyfe Kalafat",
+                yapimci: "Zaman Perdesi",
+                yapimSirketi: "Zaman Perdesi Yapım",
+                yapim: "Türkiye",
+                goruntu: "Ahmet Yılmaz",
+                kurgu: "Mehmet Demir",
+                oyuncular: "Can Yaman, Elçin Sangu",
+                afis: "IMG_20240410_193358.jpg"
             }
-        }
+        ];
 
-        // Mobil ağ kısıtlamalarını baypas eden Base64 dönüştürücü
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
+        function renderGrid() {
+            const grid = document.getElementById('filmGrid');
+            grid.innerHTML = '';
+            filmler.forEach((film, index) => {
+                grid.innerHTML += `
+                    <div class="film-card" onclick="showDetail(${index})">
+                        <img src="${film.afis}" class="film-poster" alt="${film.ad}">
+                        <div class="film-card-info">
+                            <h3>${film.ad} (${film.yil})</h3>
+                            <p>${film.tur} | ${film.sure}</p>
+                        </div>
+                    </div>
+                `;
             });
         }
 
-        async function uploadSongBase64() {
-            const title = document.getElementById('song-title').value;
-            const genre = document.getElementById('song-genre').value;
-            const album = document.getElementById('song-album').value;
-            const lyrics = document.getElementById('song-lyrics').value;
-            const fileInput = document.getElementById('song-file');
-            const uploadBtn = document.getElementById('upload-btn');
+        function openModal() { document.getElementById('adminModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('adminModal').style.display = 'none'; }
 
-            if (!title || fileInput.files.length === 0) {
-                alert('Lütfen şarkı adını girin ve bir ses dosyası seçin!');
-                return;
-            }
+        function saveFilm(e) {
+            e.preventDefault();
+            const dosyaInput = document.getElementById('fAfisDosya');
+            
+            if (dosyaInput.files && dosyaInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(uploadEvent) {
+                    const yeniFilm = {
+                        ad: document.getElementById('fAd').value,
+                        slogan: document.getElementById('fSlogan').value,
+                        tur: document.getElementById('fTur').value,
+                        yil: document.getElementById('fYil').value,
+                        sure: document.getElementById('fSure').value,
+                        konu: document.getElementById('fKonu').value,
+                        tema: document.getElementById('fTema').value,
+                        perde1: document.getElementById('fPerde1').value,
+                        perde2: document.getElementById('fPerde2').value,
+                        perde3: document.getElementById('fPerde3').value,
+                        yonetmen: document.getElementById('fYonetmen').value,
+                        senarist: document.getElementById('fSenarist').value,
+                        yapimci: document.getElementById('fYapimci').value,
+                        yapimSirketi: document.getElementById('fYapimSirketi').value,
+                        yapim: document.getElementById('fYapimUlke').value,
+                        goruntu: document.getElementById('fGoruntu').value,
+                        kurgu: document.getElementById('fKurgu').value,
+                        oyuncular: document.getElementById('fOyuncular').value,
+                        afis: uploadEvent.target.result // Seçilen görselin verisi
+                    };
 
-            const file = fileInput.files[0];
-            uploadBtn.innerText = 'Dosya işleniyor...';
-            uploadBtn.disabled = true;
-
-            try {
-                const base64Data = await fileToBase64(file);
-                const base64Content = base64Data.split(',')[1];
-                const byteCharacters = atob(base64Content);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                    byteNumbers[i] = byteCharacters.charCodeAt(i);
-                }
-                const byteArray = new Uint8Array(byteNumbers);
-                const blob = new Blob([byteArray], { type: file.type || 'audio/mpeg' });
-
-                const cleanFileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')}`;
-
-                uploadBtn.innerText = 'Yükleniyor, lütfen bekleyin...';
-
-                const { data: storageData, error: storageError } = await supabase.storage
-                    .from('sarkilar')
-                    .upload(cleanFileName, blob, {
-                        cacheControl: '3600',
-                        upsert: true,
-                        contentType: file.type || 'audio/mpeg'
-                    });
-
-                if (storageError) throw storageError;
-
-                const { data: urlData } = supabase.storage
-                    .from('sarkilar')
-                    .getPublicUrl(cleanFileName);
-
-                const { data: { user } } = await supabase.auth.getUser();
-
-                const { error: dbError } = await supabase.from('songs').insert([{ 
-                    title, 
-                    artist: user.email.split('@')[0], 
-                    song_url: urlData.publicUrl, 
-                    user_id: user.id, 
-                    is_approved: false 
-                }]);
-
-                if (dbError) throw dbError;
-
-                alert('Şarkı başarıyla yüklendi ve küratör onayına gönderildi!');
-                document.getElementById('song-title').value = '';
-                document.getElementById('song-album').value = '';
-                document.getElementById('song-lyrics').value = '';
-                fileInput.value = '';
-                loadSongs();
-            } catch (error) {
-                alert('İşlem sırasında hata oluştu: ' + error.message);
-            } finally {
-                uploadBtn.innerText = 'Şarkıyı Gönder';
-                uploadBtn.disabled = false;
+                    filmler.push(yeniFilm);
+                    localStorage.setItem('zamanPerdesiFilmler', JSON.stringify(filmler));
+                    closeModal();
+                    document.getElementById('filmForm').reset();
+                    renderGrid();
+                };
+                reader.readAsDataURL(dosyaInput.files[0]);
             }
         }
 
-        async function loadSongs() {
-            const { data: songs } = await supabase.from('songs').select('*').eq('is_approved', true);
-            const listDiv = document.getElementById('songs-list');
-            listDiv.innerHTML = '';
-            if(songs && songs.length > 0) {
-                songs.forEach(song => {
-                    listDiv.innerHTML += `
-                        <div class="song-card">
-                            <div><strong>${song.title}</strong> - ${song.artist}</div>
-                            <audio controls src="${song.song_url}"></audio>
+        function showDetail(index) {
+            const film = filmler[index];
+            document.getElementById('homeView').style.display = 'none';
+            document.getElementById('detailView').style.display = 'block';
+
+            document.getElementById('detailContent').innerHTML = `
+                <div class="detail-header">
+                    <img src="${film.afis}" class="detail-poster" alt="${film.ad}">
+                    <div class="detail-meta-box">
+                        <h2 class="detail-title">${film.ad}</h2>
+                        <div class="detail-slogan">"${film.slogan}"</div>
+                        <div class="badge-row">
+                            <span class="badge">📅 ${film.yil}</span>
+                            <span class="badge">⏳ ${film.sure}</span>
+                            <span class="badge">🎬 ${film.tur}</span>
+                            <span class="badge">🌍 ${film.yapim}</span>
                         </div>
-                    `;
-                });
-            } else {
-                listDiv.innerHTML = '<p style="font-size:13px; color:#94a3b8; text-align:center; margin-top:10px;">Henüz onaylanmış şarkı yok.</p>';
-            }
+                        <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; margin-bottom: 10px;"><b>Konu:</b> ${film.konu}</p>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;"><b>Tema:</b> ${film.tema}</p>
+                    </div>
+                </div>
+
+                <div class="section-box">
+                    <h3>3 Perde Uzun Akışı</h3>
+                    <p style="margin-bottom: 10px; color: var(--text-muted);"><b>1. Perde (Serim):</b> ${film.perde1}</p>
+                    <p style="margin-bottom: 10px; color: var(--text-muted);"><b>2. Perde (Gelişme):</b> ${film.perde2}</p>
+                    <p style="color: var(--text-muted);"><b>3. Perde (Çözüm):</b> ${film.perde3}</p>
+                </div>
+
+                <div class="section-box">
+                    <h3>Künye Kadrosu</h3>
+                    <div class="crew-grid">
+                        <div class="crew-item"><span>Yönetmen</span><b>${film.yonetmen}</b></div>
+                        <div class="crew-item"><span>Senarist</span><b>${film.senarist}</b></div>
+                        <div class="crew-item"><span>Yapımcı</span><b>${film.yapimci}</b></div>
+                        <div class="crew-item"><span>Yapım Şirketi</span><b>${film.yapimSirketi}</b></div>
+                        <div class="crew-item"><span>Görüntü Yönetmeni</span><b>${film.goruntu}</b></div>
+                        <div class="crew-item"><span>Kurgu</span><b>${film.kurgu}</b></div>
+                        <div class="crew-item" style="grid-column: span 2;"><span>Oyuncular</span><b>${film.oyuncular}</b></div>
+                    </div>
+                </div>
+            `;
+            window.scrollTo(0,0);
         }
-        checkUser();
+
+        function goHome() {
+            document.getElementById('detailView').style.display = 'none';
+            document.getElementById('homeView').style.display = 'block';
+        }
+
+        renderGrid();
     </script>
 </body>
 </html>
