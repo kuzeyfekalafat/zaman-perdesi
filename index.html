@@ -9,6 +9,7 @@
             --bg-color: #0b0f19;
             --card-bg: #131b2e;
             --accent-color: #e50914;
+            --gold-accent: #d4af37;
             --text-main: #f3f4f6;
             --text-muted: #9ca3af;
             --border-color: #1f293d;
@@ -42,9 +43,24 @@
             z-index: 100;
         }
 
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-logo {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 2px solid var(--gold-accent);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+            object-fit: cover;
+        }
+
         header h1 {
-            font-size: 1.3rem;
-            letter-spacing: 2px;
+            font-size: 1.2rem;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
         }
 
@@ -101,6 +117,35 @@
             margin: 0 auto;
             padding: 20px 10px;
             flex: 1;
+        }
+
+        .brand-hero {
+            text-align: center;
+            margin-bottom: 25px;
+            padding: 15px 10px;
+        }
+
+        .main-logo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 2px solid var(--gold-accent);
+            box-shadow: 0 0 18px rgba(212, 175, 55, 0.4);
+            object-fit: cover;
+            margin-bottom: 12px;
+        }
+
+        .brand-hero h2 {
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .brand-hero p {
+            color: var(--gold-accent);
+            font-size: 0.85rem;
+            letter-spacing: 1px;
         }
 
         .film-grid {
@@ -463,7 +508,10 @@
 <body>
 
     <header>
-        <h1>Zaman Perdesi <span>Film</span></h1>
+        <div class="header-brand">
+            <img src="logo.png" alt="Zaman Perdesi Logo" class="header-logo">
+            <h1>Zaman Perdesi <span>Film</span></h1>
+        </div>
         <div class="header-btns" id="headerBtnsContainer">
             <button class="user-btn" id="userAuthBtn" onclick="handleUserAuthClick()">👤 Üye Girişi</button>
             <button class="admin-btn" id="mainAdminBtn" onclick="handleAdminClick()">🔒 Admin Girişi</button>
@@ -472,6 +520,13 @@
     </header>
 
     <main>
+        <!-- Ana Karşılama ve Kurumsal Logo Alanı -->
+        <div class="brand-hero">
+            <img src="logo.png" alt="Zaman Perdesi Prodüksiyon Holding" class="main-logo">
+            <h2>KUZEYFE KALAFAT & ZAMAN PERDESİ</h2>
+            <p>Resmî Dijital Markalar & Portallar</p>
+        </div>
+
         <div id="homeView">
             <h2 style="margin-bottom: 15px; font-size: 1.1rem; border-left: 4px solid var(--accent-color); padding-left: 8px;">Arşivdeki Projeler</h2>
             <div class="film-grid" id="filmGrid">Yükleniyor...</div>
